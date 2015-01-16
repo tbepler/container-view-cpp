@@ -1,5 +1,8 @@
 #VIM temporary files
-.swp
+*.swp
+
+#Build dependencies file
+.depend
 
 # Compiled Object files
 *.slo

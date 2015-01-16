@@ -34,6 +34,7 @@ class Permutation{
             }
         }
 
+        
         template< typename Container >
         Container permutation( std::size_t index ) const{
             Container c( m_len );
@@ -52,8 +53,8 @@ class Permutation{
         }
 
     private:
-        std::size_t m_len;
         std::size_t m_alphabet;
+        std::size_t m_len;
 
         static std::size_t pow( std::size_t base, std::size_t exp ){
             std::size_t result = 1;
