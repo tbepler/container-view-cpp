@@ -35,7 +35,8 @@ DEPS := $(addprefix $(DEPS_DIR)/,$(SRCS:.cpp=.d))
 TEST_HEADERS := $(shell find $(TEST_DIR) -type f -name "*.h" )
 
 #find the src files in the test directory
-TEST_SRCS := $(wildcard $(TEST_DIR)/*.cpp)
+TEST_SRCS := $(shell find $(TEST_DIR) -type f -name "*.cpp" ! -path $(GTEST_DIR))
+#$(wildcard $(TEST_DIR)/*.cpp)
 TEST_OBJS=$(addprefix $(BIN)/,$(TEST_SRCS:.cpp=.o))
 
 TEST_MAIN=$(TEST_DIR)run_tests.cpp
