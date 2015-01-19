@@ -7,7 +7,7 @@
 
 namespace math{
 
-    template<typename I0, typename I1 = I0>
+    template<typename I0 = long, typename I1 = I0>
     typename std::enable_if<
         std::is_integral<I0>::value && std::is_integral<I1>::value,
         I0
