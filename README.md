@@ -1,1 +1,3 @@
-# container-view-cpp
+# utils-cpp
+
+Library of C++ utilities
