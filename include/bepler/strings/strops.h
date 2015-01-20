@@ -33,7 +33,7 @@ namespace strings{
         return s;
     }
 
-}
+} //namespace strings
 
 #endif
 

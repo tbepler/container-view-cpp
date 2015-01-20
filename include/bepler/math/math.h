@@ -30,6 +30,6 @@ namespace math{
 
         }
 
-}
+} //namespace math
 
 #endif
