@@ -1,7 +1,7 @@
 #ifndef INCLUDED_BEPLER_MATH_MATH_H
 #define INCLUDED_BEPLER_MATH_MATH_H
 
-#include "bepler/strings/strio.h"
+#include "bepler/strings/strformat.h"
 #include <type_traits>
 #include <stdexcept>
 
@@ -15,7 +15,7 @@ namespace math{
         pow( I0 base, I1 exp ){
 
             if( exp < 0 ){
-                throw std::invalid_argument( string::sprintf( "Exponent must be >= 0, but was %ld", exp ) );
+                throw std::invalid_argument( strings::sprintf( "Exponent must be >= 0, but was %ld", exp ) );
             }
 
             I0 result = 1;

@@ -1,10 +1,12 @@
-#include "bepler/strings/strio.h"
+#include "bepler/strings/strformat.h"
 
 #include <cstdio>
 
 const static std::size_t BUFFER_SIZE = 4096;
 
-namespace string{
+using std::string;
+
+namespace strings{
 
     string sprintf( const string& format, ... ){
         std::va_list varargs;
