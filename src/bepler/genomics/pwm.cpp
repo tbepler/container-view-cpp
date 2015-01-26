@@ -5,6 +5,7 @@
 #include <cmath>
 #include <sstream>
 #include <stdexcept>
+#include <cstring>
 
 using namespace std;
 
@@ -64,22 +65,21 @@ namespace genomics{
             delete scores_;
             scores_ = NULL;
         }
+        return *this;
     }
 
     PositionWeightMatrix& PositionWeightMatrix::probabilities( const string& alph, const vector< vector<double> >& probs ){
 
         //validate the input
         size_t alph_size = alph.size();
-        for( size_t i = 0 ; i < probs.size() ; ++i ){
+        size_t len = probs.size();
+        for( size_t i = 0 ; i < len ; ++i ){
             if( probs[i].size() != alph_size ){
                 stringstream err;
                 err << "Rows must be same size as alphabet but aren't. Alphabet: " << alph_size << ", row[" << i << "]: " << probs[i].size() ;
                 throw invalid_argument( err.str() );
             }
         }
-
-        size_t len = probs.size();
-        size_t alph_size = alph.size();
 
         //log transform probs and write to scores array
         size_t elems = len * alph_size ;

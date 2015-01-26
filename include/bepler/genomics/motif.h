@@ -12,7 +12,7 @@ namespace genomics{
             virtual ~Motif() { };
             virtual double score( const char* str ) const = 0;
             inline double score( const std::string& str ) const{
-                return score( std.c_str(); );
+                return score( str.c_str() );
             }
             inline std::size_t size( ) const { return size_; }
 
