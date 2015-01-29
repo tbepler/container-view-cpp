@@ -1,10 +1,11 @@
 #include "gtest/gtest.h"
 #include "bepler/iterator_base.h"
+#include "bepler/iterator_specification.h"
 
-#include <algorithm>
+//#include <algorithm>
 
 template< typename I >
-struct RangeIter : public RandomAccessIteratorBase< RangeIter<I>, I, I, I >{
+struct RangeIter : public RandomAccessIteratorBase< RangeIter<I>, I, I >{
     
     I value_;
 
@@ -43,6 +44,8 @@ class Range{
     I end_;
 
     public:
+        typedef RangeIter<I> iterator_type;
+
         Range( I b, I e ) : begin_( b ), end_( e ) { }
         RangeIter<I> begin() const{
             return RangeIter<I>( begin_ );
@@ -57,6 +60,17 @@ class Range{
 template< typename I >
 Range<I> range( I begin, I end ){
     return Range<I>( begin, end );
+}
+
+TEST( IteratorBaseTest, MeetsIteratorSpecification ){
+    using namespace test::iterator;
+    auto r = range( -10, 10 );
+    typedef decltype(r)::iterator_type iterator_type;
+    EXPECT_TRUE( canBeIncremented<iterator_type>() );
+    EXPECT_FALSE( canBeIncremented< Range<int> >() );
+    EXPECT_TRUE( canBeIncremented< int > ( ) );
+    EXPECT_TRUE( canBeIncremented< std::vector<int>::iterator >() );
+    EXPECT_FALSE( canBeIncremented< std::vector<int> >() );
 }
 
 TEST( IteratorBaseTest, RangeIterTest ){

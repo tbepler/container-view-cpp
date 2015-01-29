@@ -49,12 +49,22 @@ template<
     typename Category = std::input_iterator_tag,
     typename Difference = std::ptrdiff_t
 >
-struct InputIteratorBase : public IteratorBase<Derived,Value,Category,Reference,Pointer,Difference>{
+struct InputIteratorBase
+    : public IteratorBase<
+        Derived,
+        Value,
+        Category,
+        Reference,
+        Pointer,
+        Difference
+    >
+{
 
     private:
         typedef IteratorBase<Derived,Value,Category,Reference,Pointer,Difference> base;
 
     public:
+
         typename base::reference operator*() const{
             return base::derived().dereference();
         }
