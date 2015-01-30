@@ -3,6 +3,7 @@
 #include "bepler/iterator_specification.h"
 
 //#include <algorithm>
+#include <vector>
 
 template< typename I >
 struct RangeIter : public RandomAccessIteratorBase< RangeIter<I>, I, I >{
@@ -44,7 +45,7 @@ class Range{
     I end_;
 
     public:
-        typedef RangeIter<I> iterator_type;
+        typedef RangeIter<I> iterator;
 
         Range( I b, I e ) : begin_( b ), end_( e ) { }
         RangeIter<I> begin() const{
@@ -62,18 +63,29 @@ Range<I> range( I begin, I end ){
     return Range<I>( begin, end );
 }
 
-TEST( IteratorBaseTest, MeetsIteratorSpecification ){
+template< typename T >
+class IteratorBaseTest : public ::testing::Test{
+
+}; //class IteratorBaseTest
+
+typedef ::testing::Types<
+    std::vector<int>::iterator,
+    std::vector<int>::const_iterator,
+    std::vector<bool>::iterator,
+    std::vector<bool>::const_iterator,
+    Range<int>::iterator
+> MyTypes;
+TYPED_TEST_CASE( IteratorBaseTest, MyTypes );
+
+TYPED_TEST( IteratorBaseTest, MeetsIteratorSpecification ){
     using namespace test::iterator;
-    auto r = range( -10, 10 );
-    typedef decltype(r)::iterator_type iterator_type;
-    EXPECT_TRUE( canBeIncremented<iterator_type>() );
-    EXPECT_FALSE( canBeIncremented< Range<int> >() );
-    EXPECT_TRUE( canBeIncremented< int > ( ) );
-    EXPECT_TRUE( canBeIncremented< std::vector<int>::iterator >() );
-    EXPECT_FALSE( canBeIncremented< std::vector<int> >() );
+    EXPECT_TRUE( isCopyConstructable<TypeParam>() );
+    EXPECT_TRUE( isCopyAssignable<TypeParam>() );
+    EXPECT_TRUE( isDestructable<TypeParam>() );
+    EXPECT_TRUE( canBeIncremented<TypeParam>() );
 }
 
-TEST( IteratorBaseTest, RangeIterTest ){
+TEST( RangeIterTest, RangeIterTest ){
 
     auto r = range( -10, 10 );
     int expect = -10;

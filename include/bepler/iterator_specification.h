@@ -45,7 +45,12 @@ namespace test{
 
         template< typename Iterator >
         bool canBeIncremented(){
-            return is_incrementable<Iterator>::value;
+            return types::is_incrementable<Iterator>::value;
+        }
+
+        template< typename Iterator >
+        bool isConst(){
+            return !std::is_assignable< typename Iterator::reference, typename Iterator::value_type >::value; 
         }
 
 
