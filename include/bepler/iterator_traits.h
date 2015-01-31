@@ -1,5 +1,5 @@
-#ifndef INCLUDED_BEPLER_ITERATOR_TYPE_TRAITS_H
-#define INCLUDED_BEPLER_ITERATOR_TYPE_TRAITS_H
+#ifndef INCLUDED_BEPLER_ITERATOR_TRAITS_H
+#define INCLUDED_BEPLER_ITERATOR_TRAITS_H
 
 #include "bepler/type_traits_extended.h"
 #include <type_traits>
