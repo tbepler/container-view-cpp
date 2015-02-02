@@ -30,8 +30,12 @@ namespace math{
 
         }
 
-    template< typename T > int sign( T val ){
+    template< typename T > inline int sign( T val ){
         return ( T(0) < val ) - ( val < T(0) );
+    }
+
+    template< typename T > inline T positive( T val ){
+        return val < 0 ? -val : val;
     }
 
 } //namespace math

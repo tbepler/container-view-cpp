@@ -76,11 +76,11 @@ namespace itertools{
             }
     
             friend bool operator==( const Derived& a, const Derived& b ){
-                return a.compareTo( b ) == 0;
+                return a.equals( b );
             }
     
             friend bool operator!=( const Derived& a, const Derived& b ){
-                return a.compareTo( b ) != 0;
+                return !a.equals( b );
             }
     
     
@@ -134,11 +134,11 @@ namespace itertools{
         public:
             Derived& operator--(){
                 base::derived().dec();
-                return *base::derived();
+                return base::derived();
             }
     
             Derived operator--( int ){
-                Derived cpy( *base::derived() );
+                Derived cpy( base::derived() );
                 base::derived().dec();
                 return cpy;
             }
@@ -220,7 +220,8 @@ namespace itertools{
 
         const T& dereference() const{ return val_; }
         const T* get() const{ return &val_; }
-        int compareTo( const RawIterator& rhs ) const{ return val_ - rhs.val_; }
+        std::ptrdiff_t compareTo( const RawIterator& rhs ) const{ return rhs.val_ - val_; }
+        bool equals( const RawIterator& rhs ) const{ return val_ == rhs.val_; }
         void inc(){ ++val_; }
         void dec(){ --val_; }
         void advance( int i ){ val_ += i; }

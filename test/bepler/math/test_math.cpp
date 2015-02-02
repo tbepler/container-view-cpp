@@ -26,3 +26,13 @@ TEST( MathTest, SignTest ){
     EXPECT_EQ( -1, math::sign( -3919149.4814 ) );
 
 }
+
+TEST( MathTest, Positive ){
+
+    EXPECT_EQ( 1, math::positive(1) );
+    EXPECT_EQ( 1, math::positive(-1) );
+    EXPECT_EQ( 53.67, math::positive( 53.67 ) );
+    EXPECT_EQ( 53.67, math::positive( -53.67 ) );
+    EXPECT_EQ( 0, math::positive( 0 ) );
+
+}
