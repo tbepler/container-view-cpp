@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "bepler/iterator_traits.h"
+#include "bepler/type_traits/iterator_traits.h"
 
 #include <iterator>
 #include <vector>
@@ -8,8 +8,9 @@
 #include <forward_list>
 #include <utility>
 
+using namespace type_traits;
+
 TEST( IteratorTraitsTest, IsIteratorCategories ){
-    using namespace types;
 
     EXPECT_TRUE( is_iterator_category<std::random_access_iterator_tag>::value );
     EXPECT_TRUE( is_input_iterator_category<std::random_access_iterator_tag>::value );
@@ -87,7 +88,6 @@ struct InvalidCategoryIterTraits{
 };
 
 TEST( IteratorTraitsTest, DefinesIteratorTraits ){
-    using namespace types;
 
     EXPECT_TRUE( defines_iterator_traits<DefinesIterTraits>::value );
     EXPECT_FALSE( defines_iterator_traits<NoIterTraits>::value );
@@ -104,7 +104,6 @@ TEST( IteratorTraitsTest, DefinesIteratorTraits ){
 }
 
 TEST( IteratorTraitsTest, HasIteratorBaseProperties ){
-    using namespace types;
 
     EXPECT_FALSE( has_iterator_base_properties<int>::value );
     EXPECT_FALSE( has_iterator_base_properties<float>::value );
@@ -121,7 +120,6 @@ TEST( IteratorTraitsTest, HasIteratorBaseProperties ){
 }
 
 TEST( IteratorTraitsTest, IsInputIterator ){
-    using namespace types;
 
     EXPECT_FALSE( is_input_iterator<int>::value );
     EXPECT_FALSE( is_input_iterator<float>::value );
@@ -147,7 +145,6 @@ TEST( IteratorTraitsTest, IsInputIterator ){
 }
 
 TEST( IteratorTraitsTest, IsOutputIterator ){
-    using namespace types;
 
     EXPECT_FALSE( is_output_iterator<int>::value );
     EXPECT_FALSE( is_output_iterator<float>::value );
@@ -173,7 +170,6 @@ TEST( IteratorTraitsTest, IsOutputIterator ){
 }
 
 TEST( IteratorTraitsTest, IsForwardIterator ){
-    using namespace types;
 
     EXPECT_FALSE( is_forward_iterator<int>::value );
     EXPECT_FALSE( is_forward_iterator<float>::value );
@@ -199,7 +195,6 @@ TEST( IteratorTraitsTest, IsForwardIterator ){
 }
 
 TEST( IteratorTraitsTest, IsBidirectionalIterator ){
-    using namespace types;
 
     EXPECT_FALSE( is_bidirectional_iterator<int>::value );
     EXPECT_FALSE( is_bidirectional_iterator<float>::value );
@@ -225,7 +220,6 @@ TEST( IteratorTraitsTest, IsBidirectionalIterator ){
 }
 
 TEST( IteratorTraitsTest, IsRandomAccessIterator ){
-    using namespace types;
 
     EXPECT_FALSE( is_random_access_iterator<int>::value );
     EXPECT_FALSE( is_random_access_iterator<float>::value );
@@ -253,7 +247,6 @@ TEST( IteratorTraitsTest, IsRandomAccessIterator ){
 }
 
 TEST( IteratorTraitsTest, IsIterator ){
-    using namespace types;
 
     EXPECT_FALSE( is_iterator<int>::value );
     EXPECT_FALSE( is_iterator<float>::value );
@@ -279,7 +272,6 @@ TEST( IteratorTraitsTest, IsIterator ){
 }
 
 TEST( IteratorTraitsTest, IsConstIterator ){
-    using namespace types;
 
     EXPECT_FALSE( is_const_iterator< std::vector<int>::iterator >::value );
     EXPECT_TRUE( is_const_iterator< std::vector<int>::const_iterator >::value );

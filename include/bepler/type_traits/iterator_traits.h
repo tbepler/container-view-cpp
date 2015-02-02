@@ -1,11 +1,11 @@
 #ifndef INCLUDED_BEPLER_ITERATOR_TRAITS_H
 #define INCLUDED_BEPLER_ITERATOR_TRAITS_H
 
-#include "bepler/type_traits_extended.h"
+#include "bepler/type_traits/type_traits_extended.h"
 #include <type_traits>
 #include <iterator>
 
-namespace types{
+namespace type_traits{
 
     template< typename T >
     struct is_random_access_iterator_category{
@@ -201,6 +201,6 @@ namespace types{
         enum{ value = !std::is_assignable< typename std::iterator_traits<T>::reference, typename std::iterator_traits<T>::value_type >::value };
     }; //struct is_const_iterator, is_iter = true specialization
 
-} //namespace types
+} //namespace type_traits
 
 #endif

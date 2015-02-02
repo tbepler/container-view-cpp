@@ -1,13 +1,13 @@
 #ifndef INCLUDED_BEPLER_ITERABLE_TRAITS_H
 #define INCLUDED_BEPLER_ITERABLE_TRAITS_H
 
-#include "bepler/type_traits_extended.h"
-#include "bepler/iterator_traits.h"
+#include "bepler/type_traits/type_traits_extended.h"
+#include "bepler/type_traits/iterator_traits.h"
 #include <type_traits>
 #include <iterator>
 #include <utility>
 
-namespace types{
+namespace type_traits{
 
     template< typename Iterable >
         using iterator_type_of =
@@ -54,30 +54,28 @@ namespace types{
     template< typename T >
         using is_const_iterable = is_iterable< const T >;
 
-} //namespace types
+    template< typename T,
+        bool is_iterable = type_traits::is_iterable<T>::value,
+        bool is_const_iterable = type_traits::is_const_iterable<T>::value >
+    struct iterable_traits{ };
 
-template< typename T,
-    bool is_iterable = types::is_iterable<T>::value,
-    bool is_const_iterable = types::is_const_iterable<T>::value >
-struct iterable_traits{
+    template< typename T >
+    struct iterable_traits<T,true,true>{
+        using iterator = type_traits::iterator_type_of<T>;
+        using const_iterator = type_traits::const_iterator_type_of<T>;
+    };
 
-};
+    template< typename T >
+    struct iterable_traits<T,false,true>{
+        using iterator = type_traits::const_iterator_type_of<T>;
+        using const_iterator = type_traits::const_iterator_type_of<T>;
+    };
 
-template< typename T >
-struct iterable_traits<T,true,true>{
-    using iterator = types::iterator_type_of<T>;
-    using const_iterator = types::const_iterator_type_of<T>;
-};
+    template< typename T >
+    struct iterable_traits<T,true,false>{
+        using iterator= type_traits::iterator_type_of<T>;
+    };
 
-template< typename T >
-struct iterable_traits<T,false,true>{
-    using iterator = types::const_iterator_type_of<T>;
-    using const_iterator = types::const_iterator_type_of<T>;
-};
-
-template< typename T >
-struct iterable_traits<T,true,false>{
-    using iterator= types::iterator_type_of<T>;
-};
+} //namespace type_traits
 
 #endif

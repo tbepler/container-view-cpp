@@ -1,8 +1,12 @@
 #include "gtest/gtest.h"
-#include "bepler/type_traits_extended.h"
+#include "bepler/type_traits/type_traits_extended.h"
 
+#include <type_traits>
 #include <vector>
 #include <string>
+
+using namespace std;
+using namespace type_traits;
 
 struct HasIncrement{
     int i_;
@@ -22,9 +26,6 @@ struct NoTraits{
 };
 
 TEST( TypeTraitsTest, IsIncrementable ){
-    using types::is_incrementable;
-    using std::vector;
-    using std::string;
     EXPECT_TRUE( is_incrementable<int>::value );
     EXPECT_TRUE( is_incrementable<unsigned long>::value );
     EXPECT_TRUE( is_incrementable<char>::value );
@@ -50,9 +51,6 @@ struct HasDecrement{
 };
 
 TEST( TypeTraitsTest, IsDecrementable ){
-    using types::is_decrementable;
-    using std::vector;
-    using std::string;
     EXPECT_TRUE( is_decrementable<int>::value );
     EXPECT_TRUE( is_decrementable<unsigned long>::value );
     EXPECT_TRUE( is_decrementable<char>::value );
@@ -75,7 +73,6 @@ struct IsEqualsComparable{
 };
 
 TEST( TypeTraitsTest, IsEqualsComparable ){
-    using types::is_equals_comparable;
     EXPECT_TRUE( is_equals_comparable<int>::value );
     EXPECT_TRUE( is_equals_comparable<float>::value );
     EXPECT_TRUE( is_equals_comparable<bool>::value );
@@ -97,7 +94,6 @@ struct DereferenceAndArrow{
 };
 
 TEST( TypeTraitsTest, HasDereferenceOperator ){
-    using types::has_dereference_operator;
 
     EXPECT_TRUE( has_dereference_operator<int*>::value );
     EXPECT_TRUE( has_dereference_operator<NoTraits*>::value );
@@ -111,7 +107,6 @@ TEST( TypeTraitsTest, HasDereferenceOperator ){
 }
 
 TEST( TypeTraitsTest, HasArrowOperator ){
-    using types::has_arrow_operator;
 
     EXPECT_TRUE( has_arrow_operator<int*>::value );
     EXPECT_TRUE( has_arrow_operator<NoTraits*>::value );
@@ -142,7 +137,6 @@ struct IsInequalityComparable{
 };
 
 TEST( TypeTraitsTest, IsInequalityComparable ){
-    using types::is_inequality_comparable;
     EXPECT_TRUE( is_inequality_comparable<int>::value );
     EXPECT_TRUE( is_inequality_comparable<float>::value );
     EXPECT_TRUE( is_inequality_comparable<bool>::value );
@@ -203,8 +197,14 @@ struct AddAndSubtractable : public Addable, public Subtractable{
 
 };
 
+TEST( TypeTraitsTest, DiffType ){
+    EXPECT_TRUE( ( is_same< Subtractable, diff_type<Subtractable> >::value ) );
+    EXPECT_TRUE( ( is_same< ptrdiff_t, diff_type< char* > >::value ) );
+    EXPECT_TRUE( ( is_same< int, diff_type< int > >::value ) );
+    EXPECT_TRUE( ( is_same< double, diff_type< double, long > >::value ) );
+}
+
 TEST( TypeTraitsTest, IsAddable ){
-    using types::is_addable;
 
     EXPECT_TRUE( is_addable<int>::value );
     EXPECT_TRUE( (is_addable<int,float>::value) );
@@ -222,7 +222,6 @@ TEST( TypeTraitsTest, IsAddable ){
 }
 
 TEST( TypeTraitsTest, IsSubtractable ){
-    using types::is_subtractable;
 
     EXPECT_TRUE( is_subtractable<int>::value );
     EXPECT_TRUE( (is_subtractable<int,float>::value) );
@@ -240,7 +239,6 @@ TEST( TypeTraitsTest, IsSubtractable ){
 }
 
 TEST( TypeTraitsTest, IsCompoundAssignable ){
-    using types::is_compound_assignable;
 
     EXPECT_TRUE( is_compound_assignable<int>::value );
     EXPECT_TRUE( (is_compound_assignable<int,float>::value) );
@@ -266,7 +264,6 @@ struct Indexable{
 };
 
 TEST( TypeTraitsTest, IsIndexableBy ){
-    using types::is_indexable_by;
 
     EXPECT_TRUE( (is_indexable_by<std::vector<int>,int>::value) );
     EXPECT_TRUE( (is_indexable_by<std::string, int>::value) );

@@ -1,10 +1,13 @@
 #ifndef INCLUDED_BEPLER_TYPE_TRAITS_EXTENDED_H
 #define INCLUDED_BEPLER_TYPE_TRAITS_EXTENDED_H
 
-namespace types{
+namespace type_traits{
 
     template< typename T > T& lvalue();
     template< typename T > T rvalue();
+
+    template< typename T, typename U = T >
+    using diff_type = decltype( rvalue<T>() - rvalue<U>() );
 
     template< typename T >
     struct is_incrementable{
@@ -115,7 +118,7 @@ namespace types{
 
     }; //struct is_indexable_by
 
-} //namespace types
+} //namespace type_traits
 
 
 #endif

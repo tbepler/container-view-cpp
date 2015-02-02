@@ -1,7 +1,9 @@
 #include "gtest/gtest.h"
-#include "bepler/iterable_traits.h"
+#include "bepler/type_traits/iterable_traits.h"
 
 #include <vector>
+
+using namespace type_traits;
 
 struct Stub{
 
@@ -44,7 +46,6 @@ struct ConstIterableStub{
 
 
 TEST( IterableTraitsTest, HasBegin ){
-    using namespace types;
     EXPECT_TRUE( has_begin<IterableStub>::value );
     EXPECT_FALSE( has_begin<const IterableStub>::value );
     EXPECT_TRUE( has_begin<ConstIterableStub>::value );
@@ -58,7 +59,6 @@ TEST( IterableTraitsTest, HasBegin ){
 }
 
 TEST( IterableTraitsTest, HasEnd ){
-    using namespace types;
     EXPECT_TRUE( has_end<IterableStub>::value );
     EXPECT_FALSE( has_end<const IterableStub>::value );
     EXPECT_TRUE( has_end<ConstIterableStub>::value );
@@ -72,7 +72,6 @@ TEST( IterableTraitsTest, HasEnd ){
 }
 
 TEST( IterableTraitsTest, IsIterable ){
-    using namespace types; 
     EXPECT_TRUE( is_iterable<IterableStub>::value );
     EXPECT_FALSE( is_const_iterable<IterableStub>::value );
     EXPECT_FALSE( is_iterable< const IterableStub>::value );
