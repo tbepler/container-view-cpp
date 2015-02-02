@@ -3,12 +3,12 @@
 # Initialize directory constants
 ########################
 
-INCLUDE=include
+INCLUDE=-Iinclude
 SRC_DIR=src
 
 TEST_DIR=test
 GTEST_DIR=$(TEST_DIR)/gtest
-GTEST_INCLUDE = $(GTEST_DIR) $(GTEST_DIR)/include
+GTEST_INCLUDE = -isystem $(GTEST_DIR) -isystem $(GTEST_DIR)/include
 INCLUDE += $(GTEST_INCLUDE)
 
 BIN=bin
@@ -52,8 +52,7 @@ DEPS += $(addprefix $(DEPS_DIR)/,$(TEST_SRCS:.cpp=.d))
 ########################
 CXX=g++
 CXXFLAGS= -Wall -Wextra -pthread -std=c++11
-INCL= $(foreach incl,$(INCLUDE),-I$(incl))
-CXXFLAGS += $(INCL)
+CXXFLAGS += $(INCLUDE)
 
 #INCL_GTEST= $(foreach incl,$(GTEST_INCLUDE),-I$(incl))
 

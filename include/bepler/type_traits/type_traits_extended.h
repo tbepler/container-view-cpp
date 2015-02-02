@@ -1,13 +1,62 @@
 #ifndef INCLUDED_BEPLER_TYPE_TRAITS_EXTENDED_H
 #define INCLUDED_BEPLER_TYPE_TRAITS_EXTENDED_H
 
+#include <type_traits>
+
 namespace type_traits{
 
     template< typename T > T& lvalue();
     template< typename T > T rvalue();
 
+    template< typename T > struct identity{ typedef T type; };
+
+    template< typename T >
+    struct promote_type{
+        using type = T;
+    };
+    template<> struct promote_type<char>{ using type = int; };
+    template<> struct promote_type<unsigned char>{ using type = unsigned int; };
+    template<> struct promote_type<int>{ using type = long; };
+    template<> struct promote_type<unsigned int>{ using type = unsigned long; };
+    template<> struct promote_type<long>{ using type = long long; };
+    template<> struct promote_type<unsigned long>{ using type = unsigned long long; };
+    template<> struct promote_type<float>{ using type = double; };
+
+    template< typename T >
+    using promote = typename promote_type<T>::type;
+
+    template< typename T >
+    struct safe_make_signed{
+        using type = typename std::conditional<
+            !std::is_signed<T>::value && std::is_integral<T>::value,
+            std::make_signed< promote<T> >,
+            identity< T >
+        >::type::type;
+    };
+
     template< typename T, typename U = T >
     using diff_type = decltype( rvalue<T>() - rvalue<U>() );
+
+    template< typename T, typename U = T >
+    using safe_diff_t = typename std::conditional<
+        std::is_same< T,diff_type<T,U> >::value || std::is_same< U,diff_type<T,U> >::value,
+        promote< diff_type<T,U> >,
+        diff_type<T,U>
+    >::type;
+
+    template< typename T, typename U = T >
+    using signed_diff_t = typename std::conditional<
+        std::is_integral< diff_type<T,U> >::value,
+        std::make_signed< diff_type<T,U> >,
+        identity< diff_type<T,U> >
+    >::type::type;
+
+    template< typename T, typename U = T >
+    using safe_signed_diff_t = typename std::conditional<
+        std::is_integral< safe_diff_t<T,U> >::value,
+        std::make_signed< safe_diff_t<T,U> >,
+        identity< safe_diff_t<T,U> >
+    >::type::type;
 
     template< typename T >
     struct is_incrementable{

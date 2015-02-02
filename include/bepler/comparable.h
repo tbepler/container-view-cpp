@@ -4,27 +4,33 @@
 template< typename T >
 struct Comparable{
 
-    friend bool operator==( const T& a, const T& b ){
+    template< typename U >
+    friend bool operator==( const T& a, const U& b ){
         return a.compareTo( b ) == 0;
     }
 
-    friend bool operator!=( const T& a, const T& b ){
+    template< typename U >
+    friend bool operator!=( const T& a, const U& b ){
         return a.compareTo( b ) != 0;
     }
-
-    friend bool operator<( const T& a, const T& b ){
+    
+    template< typename U >
+    friend bool operator<( const T& a, const U& b ){
         return a.compareTo( b ) < 0;
     }
 
-    friend bool operator<=( const T& a, const T& b ){
+    template< typename U >
+    friend bool operator<=( const T& a, const U& b ){
         return a.compareTo( b ) <= 0;
     }
 
-    friend bool operator>( const T& a, const T& b ){
+    template< typename U >
+    friend bool operator>( const T& a, const U& b ){
         return a.compareTo( b ) > 0;
     }
 
-    friend bool operator>=( const T& a, const T& b ){
+    template< typename U >
+    friend bool operator>=( const T& a, const U& b ){
         return a.compareTo( b ) >= 0;
     }
 

@@ -4,16 +4,16 @@
 #include <type_traits>
 
 template< typename T >
-class RangeTest : public ::testing::Test{ };
+class TypedRangeTest : public ::testing::Test{ };
 
-typedef ::testing::Types< char, int, unsigned, float, double > MyTypes;
-TYPED_TEST_CASE( RangeTest, MyTypes );
+typedef ::testing::Types< char, int, unsigned, std::size_t, float, double > MyTypes;
+TYPED_TEST_CASE( TypedRangeTest, MyTypes );
 
-TYPED_TEST( RangeTest, RangeInstantion ){
+TYPED_TEST( TypedRangeTest, RangeInstantion ){
 
     typedef TypeParam test_t;
     
-    auto range = itertools::range( test_t( 10 ) );
+    auto range = itertools::range<test_t,test_t>( test_t( 10 ) );
     EXPECT_EQ( test_t(0), range.first() );
     EXPECT_EQ( test_t(10), range.last() );
     EXPECT_EQ( test_t(1), range.step() );
@@ -21,7 +21,7 @@ TYPED_TEST( RangeTest, RangeInstantion ){
     range = itertools::range( test_t( 5 ), test_t( -5 ) );
     EXPECT_EQ( test_t(5), range.first() );
     EXPECT_EQ( test_t(-5), range.last() );
-    EXPECT_EQ( std::is_signed<test_t>::value ? test_t(-1) : test_t(1), range.step() );
+    EXPECT_EQ( std::is_signed<test_t>::value ? -1 : 1, range.step() );
 
     range = itertools::range( test_t(2.5), test_t(25), test_t(1.5) );
     EXPECT_EQ( test_t(2.5), range.first() );
@@ -35,7 +35,7 @@ TYPED_TEST( RangeTest, RangeInstantion ){
     }
 }
 
-TYPED_TEST( RangeTest, RangeSize ){
+TYPED_TEST( TypedRangeTest, RangeSize ){
 
     typedef TypeParam test_t;
 
@@ -47,7 +47,7 @@ TYPED_TEST( RangeTest, RangeSize ){
 
 }
 
-TYPED_TEST( RangeTest, RangeIndexing ){
+TYPED_TEST( TypedRangeTest, RangeIndexing ){
     typedef TypeParam test_t;
 
     auto range = itertools::range( test_t(10) );
@@ -57,18 +57,18 @@ TYPED_TEST( RangeTest, RangeIndexing ){
 
     test_t first = std::is_signed<test_t>::value ? -5 : 5;
     test_t step = std::is_signed<test_t>::value ? -1.5 : 1.5;
-    range = itertools::range( first, test_t(-12), step );
-    EXPECT_EQ( first, range[0] );
-    EXPECT_EQ( first + ( range.size() - 1 ) * step, range[ range.size() - 1 ] );
-    EXPECT_THROW( range[ range.size() ], std::out_of_range );
+    auto range2 = itertools::range( first, test_t(-12), step );
+    EXPECT_EQ( first, range2[0] );
+    EXPECT_EQ( first + ( range2.size() - 1 ) * step, range2[ range2.size() - 1 ] );
+    EXPECT_THROW( range2[ range2.size() ], std::out_of_range );
 
-    for( unsigned i = 0 ; i < range.size() && i < 100 ; ++i ){
-        EXPECT_EQ( first + i * step, range[i] );
+    for( unsigned i = 0 ; i < range2.size() && i < 100 ; ++i ){
+        EXPECT_EQ( first + i * step, range2[i] );
     }
 
 }
 
-TYPED_TEST( RangeTest, RangeIterator ){
+TYPED_TEST( TypedRangeTest, RangeIterator ){
     typedef TypeParam test_t;
 
     auto range = itertools::range( test_t( 2.5 ), test_t( 22.25 ), test_t( 3.33 ) );
@@ -85,7 +85,7 @@ TYPED_TEST( RangeTest, RangeIterator ){
 
 }
 
-TYPED_TEST( RangeTest, ReverseRange ){
+TYPED_TEST( TypedRangeTest, ReverseRange ){
     typedef TypeParam test_t;
 
     auto range = itertools::range( test_t( 15.2 ) );
@@ -96,4 +96,29 @@ TYPED_TEST( RangeTest, ReverseRange ){
         --end;
     }
 
+}
+
+TEST( RangeTest, Comparable ){
+    auto range0 = itertools::range( int( 15 ) );
+    EXPECT_EQ( itertools::range( int( 15 ) ), range0 );
+    EXPECT_TRUE( itertools::range( int( 14 ) ) < range0 );
+    EXPECT_TRUE( itertools::range( int(-5), int(15) ) < range0 );
+    EXPECT_TRUE( itertools::range( int(17) ) > range0 );
+    auto range1 = itertools::range( double( 15 ) );
+    auto range2 = itertools::range( float( 0 ), float( 15 ), float( 1 ) );
+    EXPECT_EQ( range0, range1 );
+    EXPECT_EQ( range1, range2 );
+    EXPECT_EQ( range0, range2 );
+    EXPECT_TRUE( range0 <= range1 );
+    EXPECT_FALSE( range0 < range1 );
+    EXPECT_TRUE( range2 >= range1 );
+    EXPECT_FALSE( range2 > range1 );
+    EXPECT_TRUE( range0 >= range2 );
+    EXPECT_FALSE( range0 > range2 );
+    EXPECT_TRUE( range1 <= range0 );
+    EXPECT_FALSE( range1 < range0 );
+    EXPECT_TRUE( itertools::range( -2.5 ) < range2 );
+    EXPECT_TRUE( itertools::range( -3.3 ) < range0 );
+    EXPECT_FALSE( itertools::range( -3.3 ) > range0 );
+    EXPECT_NE( itertools::range( -3.3 ), range0 );
 }

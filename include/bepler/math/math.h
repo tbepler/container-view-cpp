@@ -1,6 +1,7 @@
 #ifndef INCLUDED_BEPLER_MATH_MATH_H
 #define INCLUDED_BEPLER_MATH_MATH_H
 
+#include <cmath>
 #include "bepler/strings/strformat.h"
 #include <type_traits>
 #include <stdexcept>
@@ -36,6 +37,22 @@ namespace math{
 
     template< typename T > inline T positive( T val ){
         return val < 0 ? -val : val;
+    }
+
+    template< typename T > inline T negative( T val ){
+        return val > 0 ? -val : val;
+    }
+
+    template< typename T > inline T truncate( T val ){
+        return val < 0 ? std::ceil( val ) : std::floor( val ); 
+    }
+
+    template< typename T > inline T roundTowardsZero( T val ){
+        return truncate( val );
+    }
+
+    template< typename T > inline T roundAwayFromZero( T val ){
+        return val < 0 ? std::floor( val ) : std::ceil( val );
     }
 
 } //namespace math
