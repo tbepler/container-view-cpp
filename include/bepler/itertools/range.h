@@ -62,7 +62,7 @@ namespace itertools{
             RangeIterator( const T& val, const step_t& step )
                 : val_( val ), step_( step ) { } 
             inline const T& dereference() const{ return val_; }
-            inline const T* get() const{ return &val_; }
+            inline const T* arrow() const{ return &val_; }
             bool equals( const RangeIterator& rhs ) const{
                 if( val_ >= rhs.val_ && step_ >= 0 ) return true;
                 if( val_ <= rhs.val_ && step_ <= 0 ) return true;

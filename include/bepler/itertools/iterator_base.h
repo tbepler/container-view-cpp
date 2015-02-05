@@ -72,14 +72,16 @@ namespace itertools{
             }
     
             typename base::pointer operator->() const{
-                return base::derived().get();
+                return base::derived().arrow();
             }
-    
-            friend bool operator==( const Derived& a, const Derived& b ){
+   
+            template< typename T >
+            friend bool operator==( const Derived& a, const T& b ){
                 return a.equals( b );
             }
     
-            friend bool operator!=( const Derived& a, const Derived& b ){
+            template< typename T >
+            friend bool operator!=( const Derived& a, const T& b ){
                 return !a.equals( b );
             }
     
@@ -219,7 +221,7 @@ namespace itertools{
         T val_;
 
         const T& dereference() const{ return val_; }
-        const T* get() const{ return &val_; }
+        const T* arrow() const{ return &val_; }
         std::ptrdiff_t compareTo( const RawIterator& rhs ) const{ return rhs.val_ - val_; }
         bool equals( const RawIterator& rhs ) const{ return val_ == rhs.val_; }
         void inc(){ ++val_; }
