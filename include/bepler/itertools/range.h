@@ -49,6 +49,43 @@ namespace itertools{
 
     } //namespace itertools::helpers
 
+    template< typename T >
+    class ValueIterator : public RandomAccessIteratorBase< ValueIterator< T >, const T >{
+        T val_;
+        public:
+            ValueIterator() : val_() { }
+            ValueIterator( const T& val ) : val_( val ) { }
+            inline const T& dereference const{ return val_; }
+            inline bool equals( const ValueIterator& o ) const{ return val_ == o.val_; }
+            inline bool equals( const T& o ) const{ return val_ == o; }
+            inline std::ptrdiff_t compareTo( const ValueIterator& o ) const{
+                return val_ - o.val_;
+            }
+            inline void inc(){ ++val_; }
+            inline void dec(){ --val_; }
+            template< typename N >
+            inline void advance( N n ){ val_ += n; }
+
+    };
+
+    template< typename T >
+    class IRange{
+        
+        using value_t = std::conditional<
+            type_traits::is_iterator<T>::value,
+            T,
+            ValueIterator<T>
+        >::type;
+
+        value_t begin_;
+        value_t end_;
+        public:
+            IRange() : begin_(), end() { }
+            IRange( const T& first, const T& last ) : begin_( first ), end_( last ) { }
+            inline value_t begin() const{ return begin_; }
+            inline value_t end() const{ return end_; }
+    };
+
     template< typename T, typename U = T >
     class RangeIterator
         : public RandomAccessIteratorBase< RangeIterator< T, U >, const T >{
