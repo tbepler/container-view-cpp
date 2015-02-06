@@ -59,6 +59,7 @@ namespace itertools{
         step_t step_;
 
         public:
+            RangeIterator( ) : val_(), step_() { }
             RangeIterator( const T& val, const step_t& step )
                 : val_( val ), step_( step ) { } 
             inline const T& dereference() const{ return val_; }

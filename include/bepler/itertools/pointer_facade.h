@@ -8,10 +8,11 @@ namespace itertools{
         T val_;
         public:
             PointerFacade( const T& val ) : val_( val ) { }
+            PointerFacade( const T* val ) : val_( *val ) { }
             T* operator->() { return &val_; }
             const T* operator->() const { return &val_; }
             T& operator*() { return val_; }
-            const T& operator*() { return val_; }
+            const T& operator*() const { return val_; }
     };
 
 } //namespace itertools

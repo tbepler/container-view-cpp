@@ -16,58 +16,70 @@ namespace itertools{
     };
     */
 
-    template< typename T >
-    struct defines_has_next{
-        template< typename U > static char test( char(*)[ sizeof(
-            std::declval<T>().hasNext() ) ] );
-        template< typename U > static long test(...);
-        enum { value = 1 == sizeof test<T>(0) };
-    };
+    namespace helpers{
 
-    template< typename Generator, typename = std::is_function >
-    class GeneratorIterator : public InputIteratorBase< GeneratorIterator<Generator>, decltype( std::declval<Generator>().next() ) >{
+        template< typename T >
+        struct defines_has_next{
+            template< typename U > static char test( char(*)[ sizeof(
+                std::declval<T>().done() ) ] );
+            template< typename U > static long test(...);
+            enum { value = 1 == sizeof test<T>(0) };
+        };
+
+    } //namespace itertools::helpers
+
+    template< typename Generator >
+    class GeneratorIterator : public InputIteratorBase< GeneratorIterator<Generator>, decltype( std::declval<Generator>().get() ), decltype( std::declval<Generator>().get() ) >{
         
-        typedef decltype( std::declval<Generator>().next() ) value_t;
+        typedef decltype( std::declval<Generator>().get() ) value_t;
 
-        Generator* g_;
-        value_t val_;
+        Generator g_;
 
         public:
-            GeneratorIterator( Generator& g ) : g_( &g ), val_( g() ) { }
+            GeneratorIterator() : g_( ) { }
+            GeneratorIterator( const Generator& g ) : g_( g ) { }
+            //GeneratorIterator( Generator& g, const value_t& val ) : g_( &g ), advance_( true ), val_( val ) { }
 
-            std::enable_if< defines_has_next<Generator>::value, bool >::type
+            template< typename U = Generator >
+            typename std::enable_if< helpers::defines_has_next<U>::value, bool >::type
             inline equals( const GeneratorIterator& b ) const{
-                return ( b.g_ == NULL && !g_->hasNext() ) || ( g_ == b.g_ && val_ == b.val_ );
+                return ( b.g_.done() && g_.done() )/* || ( g_ == b.g_ )*/;
             }
 
-            std::enable_if< !defines_has_next<Generator>::value && std::is_convertible<Generator,bool>::value, bool >::type
+            template< typename U = Generator >
+            typename std::enable_if< !helpers::defines_has_next<U>::value && std::is_convertible<U,bool>::value, bool >::type
             inline equals( const GeneratorIterator& b ) const{
-                return ( b.g_ == NULL && !(*g_) ) || ( g_ == b.g_ && val_ == b.val_ );
+                return ( b.g_ == NULL && !(*g_) ) || ( g_ == b.g_ );
             }
 
-            std::enable_if< !defines_has_next<Generator>::value && !std::is_convertible<Generator,bool>::value, bool >::type
+            template< typename U = Generator >
+            typename std::enable_if< !helpers::defines_has_next<U>::value && !std::is_convertible<U,bool>::value, bool >::type
             inline equals( const GeneratorIterator& b ) const{
-                return g_ == b.g_ && val_ == b.val_;
+                return g_ == b.g_;
             }
 
-            inline const value_t& dereference() const{ return val_; }
-            inline const value_t* arrow() const{ return &val_; }
-            inline void inc(){ val_ = (*g_)(); }
+            inline value_t dereference() const{
+                return g_.get();
+            }
+            inline value_t* arrow() const{ 
+                return &g_.get();
+            }
+            inline void inc(){
+                g_.next();
+            }
         
 
     };
 
-    template< typename Derived, typename Value >
+    template< typename Derived, typename Value, typename Reference = Value >
     struct Generator : public InputIteratorBase< Derived,
-        Value, PointerFacade<Value> >{
-        
-        inline Derived begin() const{ return derived(); }
+        Value, Reference > {
+
         inline Derived& begin() { return derived(); }
-        inline void* end() const{ return NULL; }
-        inline bool equals( const Derived& b ) const{ return !derived().hasNext() && !b.hasNext(); }
-        inline bool equals( void* b ) const{ return b == NULL && !derived().hasNext(); }
-        inline Value dereference() const{ return derived().get(); }
-        inline PointerFacade<Value> arrow() const{ return PointerFacade<Value>( derived().get() ); }
+        inline const Derived& begin() const { return derived(); }
+        inline const Derived& end() const{ return derived(); }
+        inline bool equals( const Derived& b ) const{ return derived().done() || b.done(); }
+        inline Reference dereference() const{ return derived().get(); }
         inline void inc(){ derived().next(); }
 
         private:
