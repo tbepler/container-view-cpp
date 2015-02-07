@@ -28,8 +28,8 @@ class Mapper : public Generator<
 >{
     typedef decltype( std::declval<Function>()( std::declval< typename std::iterator_traits<InputIterator>::value_type >() ) ) return_t;
     InputIterator cur_;
-    const InputIterator end_;
-    const Function f_;
+    InputIterator end_;
+    Function f_;
     public:
         Mapper() { }
         Mapper( InputIterator begin, InputIterator end )
@@ -37,7 +37,7 @@ class Mapper : public Generator<
         Mapper( InputIterator begin, InputIterator end, Function f)
             : cur_( begin ), end_( end ), f_( f ) { }
         inline bool done() const { return cur_ == end_; }
-        inline void next() { ++cur_; }
+        inline bool next() { ++cur_; return !done(); }
         inline return_t get() const { return f_(*cur_); }
 
 };
@@ -64,7 +64,7 @@ class MapIterator : public InputIteratorBase<
 >{
     typedef decltype( std::declval<Function>()( std::declval< typename std::iterator_traits<InputIterator>::value_type >() ) ) return_t;
     InputIterator pos_;
-    const Function f_;
+    Function f_;
     public:
         MapIterator() { }
         MapIterator( InputIterator pos, Function f = Function() )
@@ -78,8 +78,8 @@ class MapIterator : public InputIteratorBase<
 
 template< typename T >
 class Iterable{
-    const T begin_;
-    const T end_;
+    T begin_;
+    T end_;
     public:
         Iterable( const T& b, const T& e ) : begin_( b ), end_( e ) { }
         inline T begin() const { return begin_; }

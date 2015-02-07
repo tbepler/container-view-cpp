@@ -3,6 +3,7 @@
 
 #include <utility>
 #include <type_traits>
+#include <stdexcept>
 #include "bepler/itertools/iterator_base.h"
 #include "bepler/itertools/pointer_facade.h"
 
@@ -28,59 +29,53 @@ namespace itertools{
 
     } //namespace itertools::helpers
 
-    template< typename Generator >
-    class GeneratorIterator : public InputIteratorBase< GeneratorIterator<Generator>, decltype( std::declval<Generator>().get() ), decltype( std::declval<Generator>().get() ) >{
-        
-        typedef decltype( std::declval<Generator>().get() ) value_t;
-
-        Generator g_;
-
-        public:
-            GeneratorIterator() : g_( ) { }
-            GeneratorIterator( const Generator& g ) : g_( g ) { }
-            //GeneratorIterator( Generator& g, const value_t& val ) : g_( &g ), advance_( true ), val_( val ) { }
-
-            template< typename U = Generator >
-            typename std::enable_if< helpers::defines_has_next<U>::value, bool >::type
-            inline equals( const GeneratorIterator& b ) const{
-                return ( b.g_.done() && g_.done() )/* || ( g_ == b.g_ )*/;
-            }
-
-            template< typename U = Generator >
-            typename std::enable_if< !helpers::defines_has_next<U>::value && std::is_convertible<U,bool>::value, bool >::type
-            inline equals( const GeneratorIterator& b ) const{
-                return ( b.g_ == NULL && !(*g_) ) || ( g_ == b.g_ );
-            }
-
-            template< typename U = Generator >
-            typename std::enable_if< !helpers::defines_has_next<U>::value && !std::is_convertible<U,bool>::value, bool >::type
-            inline equals( const GeneratorIterator& b ) const{
-                return g_ == b.g_;
-            }
-
-            inline value_t dereference() const{
-                return g_.get();
-            }
-            inline value_t* arrow() const{ 
-                return &g_.get();
-            }
-            inline void inc(){
-                g_.next();
-            }
-        
-
+    template< typename G >
+    struct generator_traits{
+        using value_type = typename std::decay<decltype( std::declval<G>().get() )>::type;
+        using reference = decltype( std::declval<G>().get() );
     };
 
-    template< typename Derived, typename Value, typename Reference = Value >
-    struct Generator : public InputIteratorBase< Derived,
-        Value, Reference > {
+    template< typename G >
+    class GeneratorIterator : public InputIteratorBase< GeneratorIterator<G>, typename generator_traits<G>::value_type, typename generator_traits<G>::reference >{
+        using return_t = typename generator_traits<G>::reference;
+        G* gen_;
+        public:
+            GeneratorIterator() : gen_( NULL ) { }
+            GeneratorIterator( G& gen ) : gen_( gen ? &gen : NULL ) { }
+            inline return_t dereference() const{ return gen_->get(); }
+            void inc(){
+                if( gen_ != NULL ){
+                    gen_->next();
+                    if( gen_->done() ){
+                        gen_ = NULL;
+                    }
+                }
+                //if( gen_ != NULL && !gen_->next() ) gen_ = NULL;
+            }
+            inline bool equals( const GeneratorIterator& that ) const{
+                return gen_ == that.gen_;
+            }
+    };
 
-        inline Derived& begin() { return derived(); }
-        inline const Derived& begin() const { return derived(); }
-        inline const Derived& end() const{ return derived(); }
-        inline bool equals( const Derived& b ) const{ return derived().done() || b.done(); }
-        inline Reference dereference() const{ return derived().get(); }
-        inline void inc(){ derived().next(); }
+    template< typename Derived, typename Value >
+    struct Generator{
+        
+        using iterator = GeneratorIterator<Derived>;
+        using const_iterator = GeneratorIterator<const Derived>;
+
+        inline iterator begin() { return iterator( derived() ); }
+        inline iterator end() { return iterator(); }
+        inline const_iterator begin() const { return const_iterator( derived() ); }
+        inline const_iterator end() const { return const_iterator(); }
+        explicit operator bool() const{ return !derived().done(); }
+        Value operator()(){
+            if( derived().done() ){
+                throw std::out_of_range( "Out of elements" );
+            }
+            Value v = derived().get();
+            derived().next();
+            return v;
+        }
 
         private:
             inline Derived& derived(){ return *static_cast<Derived*>(this); }
