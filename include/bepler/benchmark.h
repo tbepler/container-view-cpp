@@ -17,12 +17,12 @@ namespace benchmark{
     }
 
     template< typename Function, typename ... T >
-    std::size_t timeIters( std::size_t iters, Function f, T... args ){
+    double timeIters( std::size_t iters, Function f, T... args ){
         std::size_t time = rdtsc();
         for( std::size_t i = 0 ; i < iters ; ++i ){
             f( &args... );
         }
-        return ( rdtsc() - time ) / iters ;
+        return ( rdtsc() - time ) / (double) iters ;
     }
 
 } //namespace benchmark

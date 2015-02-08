@@ -2,6 +2,7 @@
 #define INCLUDED_BEPLER_ITERTOOLS_GENERATOR_H
 
 #include <utility>
+#include <memory>
 #include <type_traits>
 #include <stdexcept>
 #include "bepler/itertools/iterator_base.h"
@@ -38,35 +39,75 @@ namespace itertools{
     template< typename G >
     class GeneratorIterator : public InputIteratorBase< GeneratorIterator<G>, typename generator_traits<G>::value_type, typename generator_traits<G>::reference >{
         using return_t = typename generator_traits<G>::reference;
-        G* gen_;
+        std::unique_ptr<G> gen_;
         public:
-            GeneratorIterator() : gen_( NULL ) { }
-            GeneratorIterator( G& gen ) : gen_( gen ? &gen : NULL ) { }
+            GeneratorIterator() : gen_( (G*) NULL ) { }
+            GeneratorIterator( const G& gen ) : gen_( gen ? new G( gen ) : (G*) NULL ) { }
+            GeneratorIterator( const GeneratorIterator& o ) : gen_( o.gen_ ? new G( *o.gen_ ) : (G*) NULL ) { }
+            GeneratorIterator& operator=( const GeneratorIterator& o ){
+                gen_ = o.gen_ ? new G( *o.gen_ ) : (G*) NULL;
+                return *this;
+            }
             inline return_t dereference() const{ return gen_->get(); }
             void inc(){
-                if( gen_ != NULL ){
-                    gen_->next();
-                    if( gen_->done() ){
-                        gen_ = NULL;
-                    }
+                if( gen_ && !gen_->next() ){
+                    gen_ = NULL;
                 }
-                //if( gen_ != NULL && !gen_->next() ) gen_ = NULL;
             }
             inline bool equals( const GeneratorIterator& that ) const{
                 return gen_ == that.gen_;
             }
     };
 
-    template< typename Derived, typename Value >
-    struct Generator{
-        
-        using iterator = GeneratorIterator<Derived>;
-        using const_iterator = GeneratorIterator<const Derived>;
+    template< typename Derived, typename Value, typename Reference = Value >
+    struct Generator : public InputIteratorBase<
+        Generator< Derived, Value >,
+        Value,
+        Reference
+    >{
 
-        inline iterator begin() { return iterator( derived() ); }
-        inline iterator end() { return iterator(); }
-        inline const_iterator begin() const { return const_iterator( derived() ); }
-        inline const_iterator end() const { return const_iterator(); }
+        inline Derived& begin() { return derived(); }
+        inline Derived begin() const{ return derived(); }
+        inline Derived& end() { return derived(); }
+        inline Derived end() const{ return derived(); }
+
+        inline Reference dereference() const{ return derived().get(); }
+        inline bool equals( const Derived& d ) const{ return derived().done() || d.done(); }
+        inline void inc(){ derived().next(); }
+
+        explicit operator bool() const{ return !derived().done(); }
+        Value operator()(){
+            if( derived().done() ){
+                throw std::out_of_range( "Out of elements" );
+            }
+            Value v = derived().get();
+            derived().next();
+            return v;
+        }
+
+        private:
+            inline Derived& derived(){ return *static_cast<Derived*>(this); }
+            inline const Derived& derived() const{ return *static_cast<const Derived*>(this); }
+
+    };
+
+    template< typename Derived, typename Value, typename Reference = Value >
+    struct BidirectionalGenerator : public BidirectionalIteratorBase<
+        BidirectionalGenerator< Derived, Value >,
+        Value,
+        Reference
+    >{
+
+        inline Derived& begin() { return derived(); }
+        inline Derived begin() const{ return derived(); }
+        inline Derived& end() { return derived(); }
+        inline Derived end() const{ return derived(); }
+
+        inline Reference dereference() const{ return derived().get(); }
+        inline bool equals( const Derived& d ) const{ return derived().done() || d.done(); }
+        inline void inc(){ derived().next(); }
+        inline void dec(){ derived().prev(); }
+
         explicit operator bool() const{ return !derived().done(); }
         Value operator()(){
             if( derived().done() ){

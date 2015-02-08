@@ -349,8 +349,16 @@ namespace itertools{
 
     };
 
-    
+    template< typename T >
+    IRange<T> irange( const T& last ){
+        return IRange<T>( last );
+    }
 
+    template< typename T >
+    IRange<T> irange( const T& first, const T& last ){
+        return IRange<T>( first, last );
+    }
+    
     template< typename T >
     IRange<T> range( const T& last ){
         return IRange<T>( last );
