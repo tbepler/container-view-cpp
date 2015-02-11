@@ -9,7 +9,7 @@ namespace itertools{
     template<
         typename InputIterator,
         typename Function,
-        typename iter_t = std::iterator_traits<InputIterator>::iterator_category
+        typename iter_t = typename std::iterator_traits<InputIterator>::iterator_category
     >
     class TransformIterator;
 

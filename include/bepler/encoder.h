@@ -6,7 +6,44 @@
 #include <unordered_map>
 #include <vector>
 #include <stdexcept>
+#include <iostream>
 #include <sstream>
+
+template<
+    typename T,
+    typename EncodeF,
+    typename DecodeF,
+    EncodeF encode_f = EncodeF(),
+    DecodeF decode_f = DecodeF(),
+    typename E = unsigned
+>
+class Encoded{
+    E val_;
+    public:
+        Encoded() : val_() { }
+        Encoded( const Encoded& rhs ) : val_ ( rhs.val_ ) { }
+        Encoded( const T& rhs ) : val_( encode_f( rhs ) ) { }
+        inline operator E() const { return val_; }
+        inline T decode() const{ return decode_f( val_ ); }
+        inline Encoded& operator=( const T& rhs ){ val_ = encode_f( rhs ); }
+        inline bool operator==( const T& rhs ) const{ return decode_f( val_ ) == rhs; }
+        inline bool operator!=( const T& rhs ) const{ return decode_f( val_ ) != rhs; }
+};
+
+template< typename A, typename B, typename C, B b, C c, typename D >
+std::istream& operator>>( std::istream& in, Encoded<A,B,C,b,c,D>& rhs ){
+    A raw;
+    in >> raw;
+    rhs = raw;
+    return in;
+}
+
+template< typename A, typename B, typename C, B b, C c, typename D >
+inline std::ostream& operator<<( std::ostream& out, const Encoded<A,B,C,b,c,D>& rhs ){
+    return out << rhs.decode();
+}
+
+
 
 /*
 * Struct defining an interface for generating an encoding using the curiously recurring template pattern.

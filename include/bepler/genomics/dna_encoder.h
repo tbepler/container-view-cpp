@@ -1,17 +1,51 @@
 #ifndef INCLUDED_BEPLER_GENOMICS_DNA_ENCODER_H
 #define INCLUDED_BEPLER_GENOMICS_DNA_ENCODER_H
 
+#include <iterator>
+#include <iostream>
 #include <stdexcept>
 
 namespace genomics{
 
     namespace DNA{
 
-        const static char[] BASES = "ACGT";
-        enum DNA { A, C, G, T };
+        const static char BASES[] = "ACGT";
+        enum BASE { A, C, G, T };
+
+        bool isDNA( char base ){
+            switch( base ){
+                case 'A': return true;
+                case 'C': return true;
+                case 'G': return true;
+                case 'T': return true;
+                case 'a': return true;
+                case 'c': return true;
+                case 'g': return true;
+                case 't': return true;
+            }
+            return false;
+        }
+
+        template< typename InputIterator >
+        bool isDNA( InputIterator begin, InputIterator end ){
+            for( auto it = begin ; it != end ; ++it ){
+                if( !isDNA( *it ) ) return false;
+            }
+            return true;
+        }
+
+        template< typename Range >
+        inline bool isDNA( Range& r ){
+            return isDNA( std::begin( r ), std::end( r ) );
+        }
 
         DNA encode( char base ){
             switch( base ){
+                //case A: return A;
+                //case C: return C;
+                //case G: return G;
+                //case T: return T;
+                //convert from char to DNA enum
                 case 'A': return A;
                 case 'C': return C;
                 case 'G': return G;
@@ -40,6 +74,17 @@ namespace genomics{
             for( auto it = begin ; it != end ; ++it, ++out ){
                 *out = decode( *it );
             }
+        }
+
+        std::istream& operator>>( std::istream& in, DNA& base ){
+            char c;
+            in >> c;
+            base = encode( c );
+            return in;
+        }
+
+        std::ostream& operator<<( std::ostream& out, DNA base ){
+            return out << decode( base );
         }
 
     } //namespace DNA
