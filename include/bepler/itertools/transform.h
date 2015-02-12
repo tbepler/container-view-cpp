@@ -2,7 +2,9 @@
 #define INCLUDED_BEPLER_ITERTOOLS_TRANSFORM_H
 
 #include <type_traits>
+#include "bepler/type_traits/type_traits_extended.h"
 #include "bepler/type_traits/iterator_traits.h"
+#include "bepler/type_traits/range_traits.h"
 #include "bepler/itertools/iterator_adaptor.h"
 #include "bepler/itertools/range.h"
 
@@ -22,7 +24,7 @@ namespace itertools{
 
         template< typename I, typename F >
         using iterator_adaptor_type =
-            typename IteratorAdaptor< TransformIterator< I, F >, I,
+            IteratorAdaptor< TransformIterator< I, F >, I,
             value_t< I, F >, reference_t< I, F > >;
 
     } //namespace helpers
@@ -32,11 +34,11 @@ namespace itertools{
         : public helpers::iterator_adaptor_type< Iterator, Function >{
 
         friend class helpers::iterator_adaptor_type< Iterator, Function >::base;
-        typedef helpers::iterator_adpator_type< Iterator, Function > super_t
-        typedef super_t::base base;
+        typedef helpers::iterator_adaptor_type< Iterator, Function > super_t;
+        typedef typename super_t::base base;
 
         Function f_;
-        inline base::reference dereference() const{ return f_( *iter() ); }
+        inline typename base::reference dereference() const{ return f_( *this->iter() ); }
 
         public:
             TransformIterator() { }
@@ -47,17 +49,15 @@ namespace itertools{
     };
 
     template< typename Iterator, typename Function >
-    std::enable_if< type_traits::is_iterator<Iterator>::value,
-        typename TransformIterator<Iterator,Function> >::type
-    inline transform( Iterator i, Function f = Function() ){
-        return TransformIterator<Iterator,Function>( i, f );
+    inline TransformIterator< Iterator, Function > transformIterator( Iterator i, Function f = Function() ){
+        return TransformIterator<Iterator,Function>( i , f );
     }
-
+    
     template< typename Iterator, typename Function >
     inline auto transform( Iterator begin, Iterator end, Function f = Function() )
-        -> decltype( irange( transform( begin, f ), transform( end, f ) ) )
+        -> decltype( irange( transformIterator( begin, f ), transformIterator( end, f ) ) )
     {
-        return irange( transform( begin, f ), transform( end, f ) );
+        return irange( transformIterator( begin, f ), transformIterator( end, f ) );
     }
 
     template< typename Range, typename Function >
@@ -67,7 +67,26 @@ namespace itertools{
         return transform( std::begin( r ), std::end( r ), f );
     }
 
+    template< typename Iterator, typename Function >
+    inline auto mapIterator( Function f, Iterator i )
+        -> decltype( transformIterator( i, f ) )
+    {
+        return transformIterator( i, f );
+    }
 
+    template< typename Iterator, typename Function >
+    inline auto map( Function f, Iterator begin, Iterator end )
+        -> decltype( transform( begin, end, f ) )
+    {
+        return transform( begin, end, f );
+    }
+
+    template< typename Range, typename Function >
+    inline auto map( Function f, const Range& r )
+        -> decltype( transform( r, f ) )
+    {
+        return transform( r, f );
+    }
 
 } //namespace itertools
 

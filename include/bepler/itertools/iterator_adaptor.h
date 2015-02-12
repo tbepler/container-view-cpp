@@ -25,7 +25,7 @@ namespace itertools{
         Iterator iter_;
 
         inline Reference dereference() const{ return *iter_; }
-        inline void inc(){ return ++iter_; }
+        inline void inc(){ ++iter_; }
 
         template< typename D, typename I, typename V, typename R, typename Diff, typename C >
         inline bool equals( const IteratorAdaptor<D,I,V,R,Diff,C>& rhs ) const{
@@ -33,12 +33,14 @@ namespace itertools{
         }
 
         template< typename I >
-        inline bool equals( const I& rhs ) const{ return iter_ == rhs; }
+        inline auto equals( const I& rhs ) const
+            -> decltype( iter_ == rhs )
+        { return iter_ == rhs; }
 
         typename std::enable_if<
             type_traits::is_bidirectional_iterator<Iterator>::value,
             void
-        >::type inline dec(){ return --iter_; }
+        >::type inline dec(){ --iter_; }
 
         template< typename D, typename I, typename V, typename R, typename Diff, typename C >
         typename std::enable_if<
