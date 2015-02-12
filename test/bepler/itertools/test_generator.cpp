@@ -54,20 +54,20 @@ map( Function f, const Container& c ){
 }
 
 template<
-    typename InputIterator,
-    typename Function = Identity< typename std::iterator_traits<InputIterator>::value_type >
+    typename Iterator,
+    typename Function = Identity< typename std::iterator_traits<Iterator>::value_type >
 >
-class MapIterator : public InputIteratorBase<
-    MapIterator<InputIterator,Function>,
-    decltype( rvalue<Function>()( *(rvalue<InputIterator>()) )),
-    decltype( rvalue<Function>()( *(rvalue<InputIterator>()) ))
+class MapIterator : public InputIterator<
+    MapIterator<Iterator,Function>,
+    decltype( rvalue<Function>()( *(rvalue<Iterator>()) )),
+    decltype( rvalue<Function>()( *(rvalue<Iterator>()) ))
 >{
-    typedef decltype( std::declval<Function>()( std::declval< typename std::iterator_traits<InputIterator>::value_type >() ) ) return_t;
-    InputIterator pos_;
+    typedef decltype( std::declval<Function>()( std::declval< typename std::iterator_traits<Iterator>::value_type >() ) ) return_t;
+    Iterator pos_;
     Function f_;
     public:
         MapIterator() { }
-        MapIterator( InputIterator pos, Function f = Function() )
+        MapIterator( Iterator pos, Function f = Function() )
             : pos_( pos ), f_( f ) { }
         inline bool equals( const MapIterator& b ) const { return pos_ == b.pos_; }
         inline return_t dereference() const{ return f_( *pos_ ); }

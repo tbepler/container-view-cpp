@@ -87,13 +87,13 @@ namespace itertools{
     };
 
 
-    template< typename BidirectionalIterator >
-    class RollingHashIterator : public BidirectionalIteratorBase<
-        RollingHashIterator< BidirectionalIterator >,
+    template< typename BiIterator >
+    class RollingHashIterator : public BidirectionalIterator<
+        RollingHashIterator< BiIterator >,
         std::size_t,
         std::size_t
     >{
-        using iterator = BidirectionalIterator;
+        using iterator = BiIterator;
         mutable iterator first_;
         mutable iterator end_;
         mutable RollingHash hash_;
@@ -183,9 +183,9 @@ namespace itertools{
         return RollingHashGenerator< decltype( std::begin( c ) ) >( std::begin( c ), std::end( c ), k, a );
     }
 
-    template< typename BidirectionalIterator >
-    auto rollingHash( BidirectionalIterator begin, BidirectionalIterator end, std::size_t k, std::size_t a ) -> decltype( irange( std::declval<RollingHashIterator<BidirectionalIterator> >(), std::declval<RollingHashIterator<BidirectionalIterator> >() ) ){
-        using iterator = BidirectionalIterator;
+    template< typename BiIterator >
+    auto rollingHash( BiIterator begin, BiIterator end, std::size_t k, std::size_t a ) -> decltype( irange( std::declval<RollingHashIterator<BiIterator> >(), std::declval<RollingHashIterator<BiIterator> >() ) ){
+        using iterator = BiIterator;
         RollingHashIterator<iterator> first( begin, k, a );
         RollingHashIterator<iterator> last( k, end, a );
         return irange( first, ++last );

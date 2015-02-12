@@ -8,6 +8,42 @@
 using namespace std;
 using namespace type_traits;
 
+template< typename T >
+using unsigned_t = typename static_switch<
+    T,
+    static_case< char, unsigned char >,
+    static_case< int, unsigned int >,
+    static_case< long, unsigned long >,
+    static_case< long long, unsigned long long >
+>::type;
+
+template< typename T >
+using promote_t = typename static_switch<
+    T,
+    static_case< char, int >,
+    static_case< int, long >,
+    default_case< T >,
+    static_case< long, long long >,
+    static_case< float, double >
+>::type;
+
+TEST( TypeTraitsTest, StaticSwitch ){
+
+    EXPECT_TRUE( ( is_same< unsigned long long, unsigned_t<long long> >::value ) );
+    EXPECT_TRUE( ( is_same< unsigned long, unsigned_t<long> >::value ) );
+    EXPECT_TRUE( ( is_same< unsigned int, unsigned_t<int> >::value ) );
+    EXPECT_TRUE( ( is_same< unsigned char, unsigned_t<char> >::value ) );
+    EXPECT_FALSE( ( is_same< char, unsigned_t<char> >::value ) );
+
+    EXPECT_TRUE( ( is_same< int, promote_t<char> >::value ) );
+    EXPECT_TRUE( ( is_same< double, promote_t<float> >::value ) );
+    EXPECT_TRUE( ( is_same< long, promote_t<int> >::value ) );
+    EXPECT_TRUE( ( is_same< long long, promote_t<long> >::value ) );
+    EXPECT_TRUE( ( is_same< long long, promote_t<long long> >::value ) );
+    EXPECT_TRUE( ( is_same< double, promote_t<double> >::value ) );
+
+}
+
 struct HasIncrement{
     int i_;
     HasIncrement& operator++(){

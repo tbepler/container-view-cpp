@@ -37,7 +37,7 @@ namespace itertools{
     };
 
     template< typename G >
-    class GeneratorIterator : public InputIteratorBase< GeneratorIterator<G>, typename generator_traits<G>::value_type, typename generator_traits<G>::reference >{
+    class GeneratorIterator : public InputIterator< GeneratorIterator<G>, typename generator_traits<G>::value_type, typename generator_traits<G>::reference >{
         using return_t = typename generator_traits<G>::reference;
         std::unique_ptr<G> gen_;
         public:
@@ -60,7 +60,7 @@ namespace itertools{
     };
 
     template< typename Derived, typename Value, typename Reference = Value >
-    struct Generator : public InputIteratorBase<
+    struct Generator : public InputIterator<
         Generator< Derived, Value >,
         Value,
         Reference
@@ -92,7 +92,7 @@ namespace itertools{
     };
 
     template< typename Derived, typename Value, typename Reference = Value >
-    struct BidirectionalGenerator : public BidirectionalIteratorBase<
+    struct BidirectionalGenerator : public BidirectionalIterator<
         BidirectionalGenerator< Derived, Value >,
         Value,
         Reference

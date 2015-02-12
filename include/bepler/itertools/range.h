@@ -58,7 +58,7 @@ namespace itertools{
     };
 
     template< typename T >
-    class ValueIterator : public RandomAccessIteratorBase< ValueIterator< T >, const T >{
+    class ValueIterator : public RandomAccessIterator< ValueIterator< T >, const T >{
         T val_;
         public:
             ValueIterator() : val_() { }
@@ -189,7 +189,7 @@ namespace itertools{
 
     template< typename T, typename U = T >
     class RangeIterator
-        : public RandomAccessIteratorBase< RangeIterator< T, U >, const T >{
+        : public RandomAccessIterator< RangeIterator< T, U >, const T >{
 
         typedef U step_t;
 

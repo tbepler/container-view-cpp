@@ -1,6 +1,7 @@
 #ifndef INCLUDED_BEPLER_ITERATOR_BASE_H
 #define INCLUDED_BEPLER_ITERATOR_BASE_H
 
+#include "bepler/type_traits/iterator_traits.h"
 #include "bepler/itertools/pointer_facade.h"
 #include <type_traits>
 #include <iterator>
@@ -23,7 +24,7 @@ namespace itertools{
         typename Value,
         typename Category,
         typename Reference = Value&,
-        typename Pointer = Value*,
+        typename Pointer = typename helpers::pointer_t<Reference>,
         typename Difference = std::ptrdiff_t
     >
     struct IteratorBase{
@@ -35,13 +36,12 @@ namespace itertools{
         typedef Category iterator_category;
     
         inline Derived& operator++(){
-            derived().inc();
-            return derived();
+            return this->inc();
         }
     
         inline Derived operator++( int ){
             Derived cpy( derived() );
-            derived().inc();
+            this->inc();
             return cpy;
         }
     
@@ -52,6 +52,14 @@ namespace itertools{
             inline const Derived& derived() const{
                 return static_cast<const Derived&>( *this );
             }
+            inline reference dereference() const{ return derived().dereference(); }
+            inline Derived& inc() { derived().inc(); return derived(); }
+            inline Derived& dec() { derived().dec(); return derived(); }
+            inline Derived& advance( difference_type n ){ derived().advance( n ); return derived(); } 
+            template< typename T >
+            inline bool equals( const T& rhs ) const{ return derived().equals( rhs ); }
+            template< typename T >
+            inline difference_type compareTo( const T& rhs ) const{ return derived().compareTo( rhs ); }
     
     }; //struct IteratorBase
     
@@ -62,7 +70,7 @@ namespace itertools{
         typename Category = std::input_iterator_tag,
         typename Difference = std::ptrdiff_t
     >
-    struct InputIteratorBase
+    struct InputIterator
         : public IteratorBase<
             Derived,
             Value,
@@ -74,8 +82,6 @@ namespace itertools{
     {
     
         private:
-            typedef IteratorBase<Derived,Value,Category,Reference,typename helpers::pointer_t<Reference>,Difference> base;
-   
             template< typename R = Reference >
             inline typename std::enable_if< std::is_pointer< helpers::pointer_t<R> >::value, helpers::pointer_t<R> >::type makePointer( R& ref ) const{
                 return &ref;
@@ -87,9 +93,10 @@ namespace itertools{
             }
 
         public:
+            typedef IteratorBase<Derived,Value,Category,Reference,typename helpers::pointer_t<Reference>,Difference> base;
     
             inline typename base::reference operator*() const{
-                return base::derived().dereference();
+                return base::dereference();
             }
     
             inline typename base::pointer operator->() const{
@@ -97,13 +104,13 @@ namespace itertools{
             }
    
             template< typename T >
-            inline friend bool operator==( const Derived& a, const T& b ){
-                return a.equals( b );
+            inline bool operator==( const T& b ) const{
+                return base::equals( b );
             }
     
             template< typename T >
-            inline friend bool operator!=( const Derived& a, const T& b ){
-                return !a.equals( b );
+            inline bool operator!=( const T& b ) const{
+                return !base::equals( b );
             }
     
     
@@ -116,15 +123,13 @@ namespace itertools{
         typename Category = std::output_iterator_tag,
         typename Difference = std::ptrdiff_t
     >
-    struct OutputIteratorBase : public IteratorBase<Derived,Value,Category,Reference,Value*,Difference>{
+    struct OutputIterator : public IteratorBase<Derived,Value,Category,Reference,Value*,Difference>{
     
-        private:
-            typedef IteratorBase<Derived,Value,Category,Reference,Value*,Difference> base;
-    
-        public:
-            typename base::reference operator*() const{
-                return base::derived().dereference();
-            }
+        typedef IteratorBase<Derived,Value,Category,Reference,Value*,Difference> base;
+        
+        typename base::reference operator*() const{
+            return base::dereference();
+        }
     
     }; //struct OutputIteratorBase
     
@@ -135,7 +140,9 @@ namespace itertools{
         typename Category = std::forward_iterator_tag,
         typename Difference = std::ptrdiff_t
     >
-    struct ForwardIteratorBase : public InputIteratorBase<Derived,Value,Reference,Category,Difference>{
+    struct ForwardIterator : public InputIterator<Derived,Value,Reference,Category,Difference>{
+
+        typedef typename InputIterator<Derived,Value,Reference,Category,Difference>::base base;
     
     }; //struct ForwardIteratorBase
     
@@ -146,20 +153,17 @@ namespace itertools{
         typename Category = std::bidirectional_iterator_tag,
         typename Difference = std::ptrdiff_t
     >
-    struct BidirectionalIteratorBase : public ForwardIteratorBase<Derived,Value,Reference,Category,Difference>{
+    struct BidirectionalIterator : public ForwardIterator<Derived,Value,Reference,Category,Difference>{
     
-        private:
-            typedef ForwardIteratorBase<Derived,Value,Reference,Category,Difference> base;
-    
-        public:
+        typedef typename ForwardIterator<Derived,Value,Reference,Category,Difference>::base base;
+
             Derived& operator--(){
-                base::derived().dec();
-                return base::derived();
+                return base::dec();
             }
     
             Derived operator--( int ){
                 Derived cpy( base::derived() );
-                base::derived().dec();
+                base::dec();
                 return cpy;
             }
     
@@ -172,80 +176,95 @@ namespace itertools{
         typename Category = std::random_access_iterator_tag,
         typename Difference = std::ptrdiff_t
     >
-    struct RandomAccessIteratorBase : public BidirectionalIteratorBase<Derived,Value,Reference,Category,Difference>{
-    
-        private:
-            typedef BidirectionalIteratorBase<Derived,Value,Reference,Category,Difference> base;
-    
-        public:
-            friend bool operator< (const Derived& a, const Derived& b ){
+    struct RandomAccessIterator : public BidirectionalIterator<Derived,Value,Reference,Category,Difference>{
+
+        typedef typename BidirectionalIterator<Derived,Value,Reference,Category,Difference>::base base;
+
+            template< typename T >
+            friend bool operator< (const Derived& a, const T& b ){
                 return a.compareTo( b ) < 0;
             }
     
-            friend bool operator<= ( const Derived& a, const Derived& b ){
+            template< typename T >
+            friend bool operator<= ( const Derived& a, const T& b ){
                 return a.compareTo( b ) <= 0;
             }
     
-            friend bool operator> ( const Derived& a, const Derived& b ){
+            template< typename T >
+            friend bool operator> ( const Derived& a, const T& b ){
                 return a.compareTo( b ) > 0;
             }
     
-            friend bool operator>= ( const Derived& a, const Derived& b ){
+            template< typename T >
+            friend bool operator>= ( const Derived& a, const T& b ){
                 return a.compareTo( b ) >= 0;
             }
     
-            friend typename base::difference_type operator- ( const Derived& a, const Derived& b ){
-                return a.compareTo( b );
+            typename base::difference_type operator- ( const Derived& b ) const{
+                return base::compareTo( b );
             }
     
-            Derived& operator+= ( signed n ){
-                base::derived().advance( n );
-                return base::derived();
+            Derived& operator+= ( typename base::difference_type n ){
+                return base::advance( n );
             }
     
-            Derived& operator-= ( signed n ){
-                base::derived().advance( -n );
-                return base::derived();
+            Derived& operator-= ( typename base::difference_type n ){
+                return base::advance( -n );
             }
     
-            typename base::reference operator[] ( signed n ) const{
+            typename base::reference operator[] ( typename base::difference_type n ) const{
                 return *( base::derived() + n );
             }
     
-            friend Derived operator+ ( const Derived& a, signed n ){
+            friend Derived operator+ ( const Derived& a, typename base::difference_type n ){
                 Derived d( a );
                 d += n;
                 return d;
             }
     
-            friend inline Derived operator+ ( signed n, const Derived& a ){
+            friend inline Derived operator+ ( typename base::difference_type n, const Derived& a ){
                 return a + n;
             }
     
-            friend Derived operator- ( const Derived& a, signed n ){
+            friend Derived operator- ( const Derived& a, typename base::difference_type n ){
                 Derived d( a );
                 d -= n;
                 return d;
             }
     
     }; //struct RandomAccessIteratorBase
-
-    template< typename T >
-    class RawIterator : public RandomAccessIteratorBase< RawIterator<T>, T >{
-
-        friend class RandomAccessIteratorBase< RawIterator<T>, T >;
-
-        T val_;
-
-        const T& dereference() const{ return val_; }
-        std::ptrdiff_t compareTo( const RawIterator& rhs ) const{ return rhs.val_ - val_; }
-        bool equals( const RawIterator& rhs ) const{ return val_ == rhs.val_; }
-        void inc(){ ++val_; }
-        void dec(){ --val_; }
-        void advance( int i ){ val_ += i; }
-
-    }; //class RawIterator
     
+    template<
+        typename Derived,
+        typename Category,
+        typename Value,
+        typename Reference = Value&,
+        typename Difference = std::ptrdiff_t
+    >
+    using iterator_base = typename type_traits::static_switch<
+        Category,
+        type_traits::static_case<
+            std::input_iterator_tag,
+            InputIterator< Derived, Value, Reference, Category, Difference >
+        >,
+        type_traits::static_case<
+            std::output_iterator_tag,
+            OutputIterator< Derived, Value, Reference, Category, Difference >
+        >,
+        type_traits::static_case<
+            std::forward_iterator_tag,
+            ForwardIterator< Derived, Value, Reference, Category, Difference >
+        >,
+        type_traits::static_case<
+            std::bidirectional_iterator_tag,
+            BidirectionalIterator< Derived, Value, Reference, Category, Difference >
+        >,
+        type_traits::static_case<
+            std::random_access_iterator_tag,
+            RandomAccessIterator< Derived, Value, Reference, Category, Difference >
+        >
+    >::type;
+
 } //namespace itertools
 
 #endif

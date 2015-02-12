@@ -32,6 +32,49 @@ namespace genomics{
 
     }; //class PositionWeightMatrix
 
+    class PositionWeightMatrix_new{
+    
+        using size_t = unsigned;
+        using encoder_t = void*; //TODO
+        using score_table_t = void*; //TODO
+        using kmer_enum_t = void*; //TODO
+
+        size_t k_;
+        encoder_t encoder_;
+        score_table_t score_table_;
+        kmer_enum_t kmer_enum_;
+
+        public:
+            //constructors -- TODO
+
+            inline double score( unsigned encoded_base, size_t pos ) const{
+                //return score_table_( encoded_base, pos );
+                return 0;
+            }
+
+            template< typename InputIterator >
+            double score( InputIterator begin ) const{
+                if( kmer_enum_ ){
+                    //return kmer_enum_.score( begin );
+                }
+                double s = 0;
+                for( size_t i = 0 ; i < k_ ; ++i, ++begin ){
+                    s += score( *begin, i );
+                }
+                return s;
+            }
+
+            template< typename InputIterator, typename OutputIterator >
+            void score( InputIterator begin, InputIterator end, OutputIterator out ) const{
+                if( kmer_enum_ ){
+
+                }
+            }
+            
+
+
+    };
+
     typedef PositionWeightMatrix PWM;
 
 } //namespace genomics

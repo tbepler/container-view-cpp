@@ -1,7 +1,13 @@
 #ifndef INCLUDED_BEPLER_TYPE_TRAITS_EXTENDED_H
 #define INCLUDED_BEPLER_TYPE_TRAITS_EXTENDED_H
 
+#include <string>
 #include <type_traits>
+#include <typeinfo>
+#include <memory>
+#ifndef _MSC_VER
+    #include <cxxabi.h>
+#endif
 
 namespace type_traits{
 
@@ -9,6 +15,71 @@ namespace type_traits{
     template< typename T > T rvalue();
 
     template< typename T > struct identity{ typedef T type; };
+
+    // from http://stackoverflow.com/questions/81870/print-variable-type-in-c 
+    template< typename T >
+    std::string type_name(){
+        using base_t = typename std::remove_reference<T>::type;
+
+        std::unique_ptr<char, void(*)(void*)> own(
+#ifndef _MSC_VER
+            abi::__cxa_demangle( typeid( base_t ).name(), NULL, NULL, NULL ),
+#else
+            NULL,
+#endif
+            std::free
+        );
+
+        std::string s = own != NULL ? own.get() : typeid( base_t ).name();
+        if( std::is_const< base_t >::value ){
+            s += " const";
+        }
+        if( std::is_volatile< base_t >::value ){
+            s += " volatile";
+        }
+        if( std::is_lvalue_reference<T>::value ){
+            s += "&";
+        }else if( std::is_rvalue_reference<T>::value ){
+            s += "&&";
+        }
+        return s;
+    }   
+
+    template< typename K, typename V >
+    struct static_case{
+        using key = K;
+        using type = V;
+    };
+
+    template< typename T >
+    struct default_case;
+
+    template< typename T, typename... Cases >
+    struct static_switch;
+
+    template< typename T, typename Case, typename... Cases >
+    struct static_switch< T, Case, Cases... >{
+        using type = typename std::conditional<
+            std::is_same< T, typename Case::key >::value,
+            typename Case::type,
+            typename static_switch<T,Cases...>::type
+        >::type;
+    };
+
+    template< typename T, typename V, typename... Cases >
+    struct static_switch< T, default_case<V>, Cases...>{
+        using type = typename static_switch< T, Cases..., default_case<V> >::type;
+    };
+
+    template< typename T, typename V >
+    struct static_switch< T, default_case<V> >{
+        using type = V;
+    };
+
+    template< typename T >
+    struct static_switch< T >{
+        using type = void;
+    };
 
     template< typename T >
     struct promote_type{

@@ -39,7 +39,7 @@ namespace genomics{
             return isDNA( std::begin( r ), std::end( r ) );
         }
 
-        DNA encode( char base ){
+        BASE encode( char base ){
             switch( base ){
                 //case A: return A;
                 //case C: return C;
@@ -76,14 +76,14 @@ namespace genomics{
             }
         }
 
-        std::istream& operator>>( std::istream& in, DNA& base ){
+        std::istream& operator>>( std::istream& in, BASE& base ){
             char c;
             in >> c;
             base = encode( c );
             return in;
         }
 
-        std::ostream& operator<<( std::ostream& out, DNA base ){
+        std::ostream& operator<<( std::ostream& out, BASE base ){
             return out << decode( base );
         }
 
@@ -91,7 +91,7 @@ namespace genomics{
 
     struct DNAEncoder{
 
-        inline DNA::DNA encode( char base ){
+        inline DNA::BASE encode( char base ){
             return DNA::encode( base );
         }
 

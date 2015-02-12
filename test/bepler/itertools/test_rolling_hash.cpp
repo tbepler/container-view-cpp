@@ -22,7 +22,7 @@ TEST( RollingHashTest, Hashing ){
 #include "bepler/benchmark.h"
 
 template< typename R1, typename R2 >
-bool operator==( const R1& range_1, const R2& range_2 ){
+bool equals( const R1& range_1, const R2& range_2 ){
     auto begin1 = std::begin( range_1 );
     auto end1 = std::end( range_1 );
     auto begin2 = std::begin( range_2 );
@@ -107,7 +107,7 @@ TEST( RollingHashTest, HashingIterator ){
     const static unsigned k = 3;
     const static int expected_hash[] = { 11, 45, 52, 17, 6, 26, 43, 45 };
 
-    EXPECT_TRUE( expected_hash == itertools::rollingHash( seq, k, a ) );
+    EXPECT_TRUE( equals( expected_hash, itertools::rollingHash( seq, k, a ) ) );
     EXPECT_EQ( IteratorRollingHashBenchmark()(), RollingHashBenchmark()() );
     EXPECT_EQ( IteratorRollingHashBenchmark()(), GeneratorRollingHashBenchmark()() );
     EXPECT_EQ( IteratorRollingHashBenchmark()(), NaiveHashBenchmark()() );
