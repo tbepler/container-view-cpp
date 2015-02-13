@@ -74,6 +74,49 @@ namespace itertools{
 
     };
 
+    template<
+        typename Derived,
+        typename Base,
+        typename Value = void,
+        typename Reference = void,
+        typename Difference = void,
+    >
+    class IteratorAdaptor<Derived,Base,Value,Reference,Difference,std::output_iterator_tag> {
+
+        Base base_;
+
+        protected:
+            inline Base& iter(){ return base_; }
+            
+            template< typename T >
+            inline void push( const T& x ){ *base_ = x; }
+
+            inline Derived& derived(){ return static_cast<Derived>(*this); }
+            inline const Derived& derived() const{ return static_cast<const Derived>(*this); }
+
+        public:
+            typedef std::output_iterator_tag iterator_category;
+            typedef void value_type;
+            typedef void difference_type;
+            typedef void pointer;
+            typedef void reference;
+            typedef void iterator_type;
+            typedef Base base_type;
+
+            IteratorAdaptor() { }
+            IteratorAdaptor( const Base& base ) : base_( base ) { }
+            IteratorAdaptor( const IteratorAdaptor& rhs ) : base_( rhs.base_ ) { }
+
+            inline const Base& iter() const{ return base_; }
+
+            template< typename T >
+            inline Derived& operator= ( const T& x ){ derived().push( x ); return *this; }
+            inline Derived& operator*(){ return derived(); }
+            inline Derived& operator++(){ return derived(); }
+            inline Derived operator++(int){ return derived(); }
+
+    };
+
 } //namespace itertools
 
 #endif

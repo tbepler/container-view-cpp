@@ -13,7 +13,7 @@ class Adder{
 template< typename T >
 T addFive( const T& val ){ return val + 5; }
 
-TEST( TransformTest, TransformIterators ){
+TEST( TransformTest, TransformInputIterators ){
     static const int nums[] = { 1, 5, -12, 35, 13, 13, 0 };
     Adder<int> add5( 5 );
     unsigned i = 0;
@@ -67,4 +67,8 @@ TEST( TransformTest, TransformRange ){
         EXPECT_EQ( nums[i++] + 5, val );
     }
     EXPECT_EQ( i, 7 );
+}
+
+TEST( TransformTest, TransformOutputIterator ){
+
 }

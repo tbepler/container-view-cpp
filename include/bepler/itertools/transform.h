@@ -39,6 +39,10 @@ namespace itertools{
 
         Function f_;
         inline typename base::reference dereference() const{ return f_( *this->iter() ); }
+        template< typename T >
+        inline auto push( const T& x ) -> decltype( *this->iter() = f_( x ) ){
+            *this->iter() = f_( x );
+        }
 
         public:
             TransformIterator() { }
