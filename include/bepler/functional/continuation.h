@@ -15,7 +15,18 @@ namespace functional{
     template< typename R, typename... As >
     struct continuation< R(*)( As... ) >{
         template< typename F, typename G >
-        static auto bind( F&& f, G&& g ){
+        static auto pipe( F&& f, G&& g ){
+            return [=](As... args ){
+                return g( f( std::forward<As>( args )... ) );
+            };
+        }
+        static constexpr bool is_instance = true;
+    };
+    
+    template< typename R, typename... As >
+    struct continuation< R( As... ) >{
+        template< typename F, typename G >
+        static auto pipe( F&& f, G&& g ){
             return [=](As... args ){
                 return g( f( std::forward<As>( args )... ) );
             };
@@ -24,8 +35,8 @@ namespace functional{
     };
 
     template< typename F, typename G >
-    auto bind ( F&& f, G&& g ) -> decltype( continuation<F>::bind( f, g ) ){
-        return continuation<F>::bind( f, g );
+    auto pipe ( F&& f, G&& g ) -> decltype( continuation<F>::pipe( f, g ) ){
+        return continuation<F>::pipe( f, g );
     }
 
 } //namespace functional
