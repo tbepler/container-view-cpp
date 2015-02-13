@@ -77,9 +77,9 @@ namespace itertools{
     template<
         typename Derived,
         typename Base,
-        typename Value = void,
-        typename Reference = void,
-        typename Difference = void,
+        typename Value,
+        typename Reference,
+        typename Difference
     >
     class IteratorAdaptor<Derived,Base,Value,Reference,Difference,std::output_iterator_tag> {
 

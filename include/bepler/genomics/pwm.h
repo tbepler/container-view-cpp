@@ -3,6 +3,8 @@
 
 #include "bepler/genomics/motif.h"
 #include <iostream>
+#include <string>
+#include <sstream>
 #include <vector>
 #include <unordered_map>
 
@@ -31,6 +33,58 @@ namespace genomics{
             
 
     }; //class PositionWeightMatrix
+
+    class ScoreTable{
+        
+        std::vector<double> scores_;
+        std::size_t cols_;
+        std::size_t rows_;
+
+        public:
+            ScoreTable() { }
+            template< typename Iterator >
+            ScoreTable( Iterator input, std::size_t rows, std::size_t cols )
+                : scores_( rows * cols ), cols_( cols ), rows_( rows )
+            {
+                for( std::size_t i = 0 ; i < scores_.size() ; ++i, ++input ){
+                    scores_[i] = *input;
+                }
+            }
+            
+            inline double score( unsigned offset, unsigned pos ) const{
+                return scores_[ pos*cols_ + offset ];
+            }
+
+            inline double operator()( unsigned offset, unsigned pos ) const{
+                return score( offset, pos );
+            }
+
+            friend std::istream& operator>>( std::istream& in, ScoreTable& rhs ){
+                rhs.scores_.clear();
+                rhs.cols_ = 0;
+                rhs.rows_ = 0;
+                std::string line;
+                while( std::getline( in, line ) && !line.empty() ){
+                    std::stringstream ss( line );
+                    if( rhs.cols_ == 0 ){
+                        double s;
+                        while( ss ){
+                            ss >> s;
+                            rhs.scores_.push_back( s );
+                            ++rhs.cols_;
+                        }
+                    }else{
+                        double s;
+                        for( std::size_t i = 0 ; i < rhs.cols_ ; ++i ){
+                            ss >> s;
+                            rhs.scores_.push_back( s );
+                        }
+                    }
+                    ++rhs.rows_;
+                }
+            }
+            
+    };
 
     class PositionWeightMatrix_new{
     

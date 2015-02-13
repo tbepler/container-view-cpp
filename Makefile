@@ -51,7 +51,7 @@ DEPS += $(addprefix $(DEPS_DIR)/,$(TEST_SRCS:.cpp=.d))
 # Compiler settings
 ########################
 CXX=g++
-CXXFLAGS= -Wall -Wextra -pthread -std=c++11 -O3 
+CXXFLAGS= -Wall -Wextra -pthread -std=c++14 -O3 
 CXXFLAGS += $(INCLUDE)
 
 #INCL_GTEST= $(foreach incl,$(GTEST_INCLUDE),-I$(incl))
