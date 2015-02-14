@@ -2,6 +2,7 @@
 #define INCLUDED_BEPLER_FUNCTIONAL_CONTINUATION_H
 
 #include <type_traits>
+#include <iterator>
 #include <utility>
 #include <deque>
 
@@ -67,20 +68,45 @@ namespace functional{
     };
 
     template< typename K >
+    class IterRange{
+        K&& k_;
+        public:
+            IterRange( K&& k ) : k_( std::forward<K>( k ) ) { }
+            template< typename T >
+            void operator()( T begin, T end ){
+                for( auto i = begin ; i != end ; ++i ){
+                    k_( *i );
+                }
+            }
+            template< typename R >
+            void operator()( R&& r ){
+                this->operator()( std::begin( r ), std::end( r ) );
+            }
+    };
+
+    template< typename K >
     inline auto range( K&& k ){
         return Range<K>( std::forward<K>( k ) );
     }
+    
+    template< typename K >
+    inline auto irange( K&& k ){
+        return IterRange<K>( std::forward<K>( k ) );
+    }
 
+    template< typename T >
     auto window( std::size_t n ){
 
         return [=]( auto&& k ){ 
-            //std::deque<auto> w;
-            return [=]( const auto& x ) mutable {
-                //w.push_back( x );
-                //if( w.size() > n ){
-                    //w.pop_front();
-                    //k( const w );
-                //}
+            std::deque<T> w;
+            return [=]( const T& x ) mutable {
+                w.push_back( x );
+                while( w.size() > n ){
+                    w.pop_front();
+                }
+                if( w.size() == n ){
+                    k( w );
+                }
             };
         };
 

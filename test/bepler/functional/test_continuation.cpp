@@ -65,8 +65,92 @@ TEST( ContinuationTest, Range ){
 
 }
 
-TEST( ContinuationTest, Window ){
+#include <iostream>
 
+TEST( ContinuationTest, Window ){
     
+    int begin = 0;
+    int last = 1;
+    range( window<int>(2)( [&]( const auto& it ){
+        int cur = begin;
+        bool first = true;
+        for( const auto& i : it ){
+            if( ! first ) std::cout << ", ";
+            first = false;
+            std::cout << i;
+            EXPECT_EQ( cur++, i );
+        }
+        std::cout << std::endl;
+        EXPECT_EQ( 2, cur - begin );
+        ++begin, ++last;
+    } ) )( 0, 20 );
+    EXPECT_EQ( 20, last );
+
+    begin = 0;
+    last = 3;
+    range( window<int>(4)( [&]( const auto& it ){
+        int cur = begin;
+        bool first = true;
+        for( const auto& i : it ){
+            if( ! first ) std::cout << ", ";
+            first = false;
+            std::cout << i;
+            EXPECT_EQ( cur++, i );
+        }
+        std::cout << std::endl;
+        EXPECT_EQ( 4, cur - begin );
+        ++begin, ++last;
+    } ) )( 0, 20 );
+    EXPECT_EQ( 20, last );
+    
+    begin = 0;
+    last = 0;
+    range( window<int>(0)( [&]( const auto& it ){
+        int cur = begin;
+        bool first = true;
+        for( const auto& i : it ){
+            if( ! first ) std::cout << ", ";
+            first = false;
+            std::cout << i;
+            EXPECT_EQ( cur++, i );
+        }
+        std::cout << std::endl;
+        EXPECT_EQ( 0, cur - begin );
+        ++begin, ++last;
+    } ) )( 0, 20 );
+    EXPECT_EQ( 20, last );
+
+    begin = 0;
+    last = 14;
+    range( window<int>(15)( [&]( const auto& it ){
+        int cur = begin;
+        bool first = true;
+        for( const auto& i : it ){
+            if( ! first ) std::cout << ", ";
+            first = false;
+            std::cout << i;
+            EXPECT_EQ( cur++, i );
+        }
+        std::cout << std::endl;
+        EXPECT_EQ( 15, cur - begin );
+        ++begin, ++last;
+    } ) )( 0, 20 );
+    EXPECT_EQ( 20, last );
+
+    std::string str = "ACGCTCAGGCAGCTGACTAGCATCGACTGATCGCTGTCGATGCGATATATATACGGCCGGCAG";
+    begin = 0;
+    last = 7;
+    irange( window<char>(8)( [&]( const auto& it ){
+        int cur = begin;
+        for( const auto& i : it ){
+            std::cout << i;
+            EXPECT_EQ( str[ cur++ ], i );
+        }
+        std::cout << std::endl;
+        EXPECT_EQ( 8, cur - begin );
+        ++begin, ++last;
+    } ) )( str );
+    EXPECT_EQ( str.size(), last );
+
 
 }
