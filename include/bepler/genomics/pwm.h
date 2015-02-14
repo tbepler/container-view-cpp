@@ -6,6 +6,7 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <deque>
 #include <unordered_map>
 
 namespace genomics{
@@ -15,11 +16,55 @@ namespace genomics{
         typedef std::unordered_map<char,std::size_t> Map;
 
         public:
+            PositionWeightMatrix() : offset_(), scores_( NULL ) { }
             PositionWeightMatrix( const PositionWeightMatrix& rhs );
+            PositionWeightMatrix( const std::string& alph, const std::vector<std::vector<double> >& probs ) : PositionWeightMatrix() {
+                this->probabilities( alph, probs );
+            }
             virtual ~PositionWeightMatrix();
-            virtual double score( const char* str ) const;
             double probability( char base, std::size_t pos ) const ;
             double loglikelihood( char base, std::size_t pos ) const;
+
+            template< typename Input >
+            double score( Input in ) const{
+                double s = 0;
+                for( std::size_t i = 0 ; i < size_ ; ++i, ++in ){
+                    s += loglikelihood( *in, i );
+                }
+                return s;
+            }
+
+            virtual double score( const char* in ) const override{
+                return score( in );
+            }
+
+            template< typename Input, typename Output >
+            void score( Input begin, Input end, Output out ) const{
+                std::deque<char> window;
+                Input last = begin;
+                //load first window
+                for( std::size_t i = 0 ; i < size_ ; ++i, ++last ){
+                    window.push_back( *last );
+                }
+                *out = score( window.begin() );
+                ++out;
+                //score the rest
+                while( last != end ){
+                    window.pop_front();
+                    window.push_back( *last );
+                    *out = score( window.begin() );
+                    ++last, ++out;
+                }
+            }
+
+            template< typename Input >
+            inline double operator()( Input in ) const{ return score( in ); }
+
+            template< typename Input, typename Output >
+            inline void operator()( Input begin, Input end, Output out ) const{
+                return score( begin, end, out );
+            }
+
             std::string alphabet( ) const;
             inline std::size_t alphabetSize( ) const{ return offset_.size(); }
             PositionWeightMatrix& clear( );
@@ -34,6 +79,9 @@ namespace genomics{
 
     }; //class PositionWeightMatrix
 
+    //template double PositionWeightMatrix::score<const char*>( const char* in ) const;
+
+/*
     class ScoreTable{
         
         std::vector<double> scores_;
@@ -128,7 +176,7 @@ namespace genomics{
 
 
     };
-
+*/
     typedef PositionWeightMatrix PWM;
 
 } //namespace genomics

@@ -32,6 +32,7 @@ namespace genomics{
         }
     }
 
+/*
     double PositionWeightMatrix::score( const char* str ) const{
         double s = 0;
         for( size_t i = 0 ; i < size_ ; ++i ){
@@ -39,6 +40,7 @@ namespace genomics{
         }
         return s;
     }
+*/
 
     double PositionWeightMatrix::probability( char base, size_t pos ) const{
         return exp( loglikelihood( base, pos ) );

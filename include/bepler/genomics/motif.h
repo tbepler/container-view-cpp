@@ -18,7 +18,9 @@ namespace genomics{
 
         protected:
             std::size_t size_;
+            Motif() { }
             Motif( std::size_t size ) : size_( size ) { }
+            Motif( const Motif& rhs ) : size_( rhs.size_ ) { }
 
     }; //class Motif
 

@@ -166,6 +166,7 @@ namespace itertools{
         return window( std::begin( r ), std::end( r ), n );
     }
 
+
 } //namespace itertools
 
 #endif
