@@ -1,30 +1,80 @@
 #include "gtest/gtest.h"
 #include "bepler/functional/continuation.h"
 
+#include <functional>
+
 using namespace functional;
 
 int add5( int i ){ return i + 5; }
 
+struct MultiOpFunctor{
+
+    template< typename T >
+    T operator()( T x ) const{ return x; }
+
+    auto operator()() const{ return 0; }
+
+    template< typename T, typename... Args >
+    auto operator()( T x, Args... xs ) const{ return x + (*this)( xs... ); }
+
+};
+
+TEST( ContinuationTest, AsCPS ){
+
+    int v;
+    auto cps_plus = as_cps( std::plus<int>() );
+    cps_plus( 1, 2, [&]( auto i ){
+        v = i;
+    } );
+    EXPECT_EQ( 3, v );
+
+    cps_plus( -3, -8, [&]( auto i ){
+        v = i;
+    } );
+    EXPECT_EQ( -11, v );
+
+    auto cps_add5 = as_cps( add5 );
+    cps_add5( -13, [&]( auto i ){
+        v = i;
+    } );
+    EXPECT_EQ( -8, v );
+
+    auto cps_sum = as_cps( MultiOpFunctor() );
+    cps_sum( 1, 1, 5, 0, -3, [&]( auto i ){
+        v = i;
+    } );
+    EXPECT_EQ( 4, v );
+    EXPECT_EQ( 4, cps_sum( 1, 1, 5, 0, -3, identity ) );
+    EXPECT_EQ( 0, cps_sum( identity ) );
+
+}
+
+template< typename T, T init = T() >
+struct sum_aggregator{
+    sum_aggregator() : val_( init ) { }
+    inline auto operator()( const T& x ) const{ return val_ += x; }
+    inline auto gather() const{ return val_; }
+    private:
+        mutable T val_;
+};
+
 TEST( ContinuationTest, Pipe ){
 
-    auto add5_cont = []( int i, auto f ){ return f( i + 5 ); };
-
-    //auto f = pipe( add5_cont, &add5 );
-    //EXPECT_EQ( 10, f( 0 ) );
-
     int i;
-    pipe( [](auto&& k){ return k( 5 ); }, [&](auto v){
+    auto f = pipe( as_cps( add5 ), [&](auto v){
         i = v;
     } );
+    f( 0 );
     EXPECT_EQ( 5, i );
-    //for_( 2 );
-    //EXPECT_EQ( 7, i );
-    //for_( -6 );
-    //EXPECT_EQ( -1, i );
 
-    //auto lambda_f = pipe( [](int n){ return n; }, &add5 );
-    //EXPECT_EQ( 10, lambda_f( 5 ) );
+    f( -13 );
+    EXPECT_EQ( -8, i );
+    
+    auto add10 = pipe( as_cps( add5 ), as_cps( add5 ), identity );
+    EXPECT_EQ( 13, add10( 3 ) );
 
+    auto add5_and_sum = pipe( range_c, as_cps( add5 ), sum_aggregator<int>() );
+    EXPECT_EQ( 18, add5_and_sum( 0, 3 ) );
 }
 
 TEST( ContinuationTest, Range ){
@@ -65,22 +115,15 @@ TEST( ContinuationTest, Range ){
 
 }
 
-#include <iostream>
-
 TEST( ContinuationTest, Window ){
     
     int begin = 0;
     int last = 1;
     range( window<int>(2)( [&]( const auto& it ){
         int cur = begin;
-        bool first = true;
         for( const auto& i : it ){
-            if( ! first ) std::cout << ", ";
-            first = false;
-            std::cout << i;
             EXPECT_EQ( cur++, i );
         }
-        std::cout << std::endl;
         EXPECT_EQ( 2, cur - begin );
         ++begin, ++last;
     } ) )( 0, 20 );
@@ -90,14 +133,9 @@ TEST( ContinuationTest, Window ){
     last = 3;
     range( window<int>(4)( [&]( const auto& it ){
         int cur = begin;
-        bool first = true;
         for( const auto& i : it ){
-            if( ! first ) std::cout << ", ";
-            first = false;
-            std::cout << i;
             EXPECT_EQ( cur++, i );
         }
-        std::cout << std::endl;
         EXPECT_EQ( 4, cur - begin );
         ++begin, ++last;
     } ) )( 0, 20 );
@@ -107,14 +145,9 @@ TEST( ContinuationTest, Window ){
     last = 0;
     range( window<int>(0)( [&]( const auto& it ){
         int cur = begin;
-        bool first = true;
         for( const auto& i : it ){
-            if( ! first ) std::cout << ", ";
-            first = false;
-            std::cout << i;
             EXPECT_EQ( cur++, i );
         }
-        std::cout << std::endl;
         EXPECT_EQ( 0, cur - begin );
         ++begin, ++last;
     } ) )( 0, 20 );
@@ -124,14 +157,9 @@ TEST( ContinuationTest, Window ){
     last = 14;
     range( window<int>(15)( [&]( const auto& it ){
         int cur = begin;
-        bool first = true;
         for( const auto& i : it ){
-            if( ! first ) std::cout << ", ";
-            first = false;
-            std::cout << i;
             EXPECT_EQ( cur++, i );
         }
-        std::cout << std::endl;
         EXPECT_EQ( 15, cur - begin );
         ++begin, ++last;
     } ) )( 0, 20 );
@@ -143,10 +171,8 @@ TEST( ContinuationTest, Window ){
     irange( window<char>(8)( [&]( const auto& it ){
         int cur = begin;
         for( const auto& i : it ){
-            std::cout << i;
             EXPECT_EQ( str[ cur++ ], i );
         }
-        std::cout << std::endl;
         EXPECT_EQ( 8, cur - begin );
         ++begin, ++last;
     } ) )( str );

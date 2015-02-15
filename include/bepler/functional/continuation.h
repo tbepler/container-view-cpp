@@ -8,18 +8,139 @@
 
 namespace functional{
 
-    template< typename F >
-    struct cont_adaptor{
-        static constexpr bool is_instance = false;
+    struct identity_cps{
+        template< typename T >
+        inline T operator()( T x ) const{ return x; }
+        template< typename T, typename K >
+        inline auto operator()( T x, K&& k ){ return k( x ); }
     };
 
-    template< typename R, typename... As >
-    struct cont_adaptor< R( As... ) >{
+    const static identity_cps identity;
+
+    template< unsigned n >
+    struct rotate_args{
         template< typename F >
-        static auto adapt( F&& f ){
-            return [=]( As... args, auto g ){
-                return g( f( std::forward<As>( args )... ) );
-            };
+        inline static auto eval( F&& f ){ return f(); }
+        
+        template< typename F, typename T >
+        inline static auto eval( F&& f, T&& arg ){
+            return f( std::forward<T>( arg ) );
+        }
+
+        template< typename F, typename T, typename... Ts >
+        inline static auto eval( F&& f, T&& x, Ts&&... xs ){
+            return rotate_args< n - 1 >::eval(
+                std::forward<F>( f ),
+                std::forward<Ts>( xs )...,
+                std::forward<T>( x )
+            );
+        }
+    };
+
+    template<>
+    struct rotate_args< 0 >{
+        template< typename F, typename... Ts >
+        inline static auto eval( F&& f, Ts&&... args ){
+            return f( std::forward<Ts>( args )... );
+        }
+    };
+
+    struct eval_cps{
+        template< typename K, typename F, typename... Params >
+        inline auto operator()( K&& k, F&& f, Params&&... args ) const{
+            return k( f( std::forward<Params>( args )... ) );
+        }
+    };
+
+    template< typename F >
+    struct make_cps{
+        make_cps( F&& f ) : f_( std::forward<F>( f ) ) { }
+        template< typename T, typename... Args >
+        inline auto operator()( T&& first, Args&&... xs ) const{
+            return rotate_args< sizeof...( xs ) + 1 >::eval( 
+                eval_cps(),
+                std::forward<F>( f_ ),
+                std::forward<T>( first ),
+                std::forward<Args>( xs )...
+            );
+        }
+        private:
+            F&& f_;
+    };
+
+    template< typename F >
+    inline auto as_cps( F&& f ){
+        return make_cps<F>( std::forward<F>( f ) );
+    }
+
+    template< typename T >
+    struct aggregator{
+        static inline auto gather( const T& x )
+            -> decltype( x.gather() )
+        {
+            return x.gather();
+        }
+    };
+
+    template< typename F, typename... Ks >
+    struct pipe_cps{
+        pipe_cps( F&& f, Ks&&... ks ): f_( std::forward<F>( f ) ), k_( std::forward<Ks>( ks )... ) { }
+        template< typename... Params >
+        inline auto operator()( Params&&... args )const{
+            return f_( std::forward<Params>( args )..., k_ );
+        }
+        template< typename T = pipe_cps< Ks... > >
+        inline auto gather() const
+            -> decltype( aggregator<T>::gather( std::declval<T>() ) )
+        {
+            return aggregator<T>::gather( k_ );
+        }
+        private:
+            F f_;
+            pipe_cps< Ks... > k_;
+    };
+
+    template< typename F, typename K >
+    struct pipe_cps<F,K>{
+        pipe_cps( F&& f, K&& k ): f_( std::forward<F>( f ) ), k_( std::forward<K>( k ) ) { }
+        template< typename... Params >
+        inline auto operator()( Params&&... args )const{
+            return f_( std::forward<Params>( args )..., k_ );
+        }
+        template< typename T = K >
+        inline auto gather() const
+            -> decltype( aggregator<T>::gather( std::declval<T>() ) )
+        {
+            return aggregator<T>::gather( k_ );
+        }
+        private:
+            F f_;
+            K k_;
+    };
+
+    template< typename F >
+    struct pipe_cps<F>{
+        pipe_cps( F&& f ): f_( std::forward<F>( f ) ) { }
+        template< typename... Params >
+        inline auto operator()( Params&&... args )const{
+            return f_( std::forward<Params>( args )... );
+        }
+        template< typename T = F >
+        inline auto gather() const
+            -> decltype( aggregator<T>::gather( this->f_ ) )
+        {
+            return aggregator<T>::gather( f_ );
+        }
+        private:
+            F f_;
+    };
+
+    template< typename F, typename... Ks >
+    struct aggregator< pipe_cps<F,Ks...> >{
+        static inline auto gather( const pipe_cps<F,Ks...>& p )
+            -> decltype( p.gather() )
+        {
+            return p.gather();
         }
     };
 
@@ -28,12 +149,18 @@ namespace functional{
 
     template< typename F, typename K >
     auto pipe( F&& f, K&& k ){
-        return f( k );
+        return pipe_cps< F, K >( std::forward<F>( f ), std::forward<K>( k ) );
+        //return [=]( auto&&... args ){ return f( args..., k ); };
     }
 
     template< typename F, typename K, typename... Ks >
-    auto pipe( F&& f, K&& k, Ks... ks ){
-        return f( pipe( k, ks... ) );
+    auto pipe( F&& f, K&& k, Ks&&... ks ){
+        return pipe_cps< F, K, Ks... >(
+            std::forward<F>( f ),
+            std::forward<K>( k ),
+            std::forward<Ks>( ks )... 
+        );
+        //return [=]( auto&&... args){ return f( args..., pipe( k, ks... ) ); };
     }
    
     template< typename K >
@@ -67,6 +194,37 @@ namespace functional{
             }
     };
 
+    struct range_cps{
+        template< typename T, typename K>
+        auto operator()( T begin, T end, K&& k ) const{
+            if( begin < end ){
+                for( auto i = begin ; i < end ; ++i ){
+                    k( i );
+                }
+            }else{
+                for( auto i = begin ; i > end ; --i ){
+                    k( i );
+                }
+            }
+            return aggregator<K>::gather( k );
+        }
+        template< typename T, typename D, typename K >
+        auto operator()( T begin, T end, D step, K&& k ) const{
+            if( begin < end ){
+                for( auto i = begin ; i < end ; i += step ){
+                    k( i );
+                }
+            }else{
+                for( auto i = begin ; i > end ; i += step ){
+                    k( i );
+                }
+            }
+            return k();
+        }
+    };
+
+    const static range_cps range_c;
+
     template< typename K >
     class IterRange{
         K&& k_;
@@ -86,7 +244,7 @@ namespace functional{
 
     template< typename K >
     inline auto range( K&& k ){
-        return Range<K>( std::forward<K>( k ) );
+       return Range<K>( std::forward<K>( k ) );
     }
     
     template< typename K >
