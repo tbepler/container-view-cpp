@@ -149,20 +149,91 @@ namespace functional{
 
     template< typename F, typename K >
     auto pipe( F&& f, K&& k ){
-        return pipe_cps< F, K >( std::forward<F>( f ), std::forward<K>( k ) );
-        //return [=]( auto&&... args ){ return f( args..., k ); };
+        //return pipe_cps< F, K >( std::forward<F>( f ), std::forward<K>( k ) );
+        return [=]( auto&&... args ){
+            return f( std::forward< decltype( args )>( args )..., k );
+        };
     }
 
     template< typename F, typename K, typename... Ks >
     auto pipe( F&& f, K&& k, Ks&&... ks ){
-        return pipe_cps< F, K, Ks... >(
-            std::forward<F>( f ),
-            std::forward<K>( k ),
-            std::forward<Ks>( ks )... 
-        );
-        //return [=]( auto&&... args){ return f( args..., pipe( k, ks... ) ); };
+        //return pipe_cps< F, K, Ks... >(
+        //    std::forward<F>( f ),
+        //    std::forward<K>( k ),
+        //    std::forward<Ks>( ks )... 
+        //);
+        auto pipe_k = pipe( std::forward<K>( k ), std::forward<Ks>( ks )... );
+        return [=]( auto&&... args){
+            return f( std::forward< decltype( args ) >( args )..., pipe_k );
+        };
     }
-   
+ 
+    struct foldl_f{
+        
+        template< typename F, typename T, typename G >
+        auto operator()( F&& f, T cur, G&& g ){
+            g( [&]( auto x ){
+                cur = f( cur, x );
+            } );
+            return cur;
+        }
+    
+        template< typename F, typename T, typename G, typename K >
+        auto operator()( F&& f, T cur, G&& g, K&& k ){
+            g( [&]( auto x ){
+                cur = f( cur, x );
+            } );
+            return k( cur );
+        }
+    
+    };
+
+    template< typename F, typename T, typename G >
+    auto foldl( F&& f, T cur, G&& g ){
+        g( [&]( auto x ){
+            cur = f( cur, x );
+        } );
+        return cur;
+    }
+
+    template< typename F, typename T, typename G, typename K >
+    auto foldl( F&& f, T cur, G&& g, K&& k ){
+        g( [&]( auto x ){
+            cur = f( cur, x );
+        } );
+        return k( cur );
+    }
+
+    template< typename F, typename... Args >
+    auto foldl( F&& f, Args&&... xs ){
+        return [=]( auto&&... args ){
+            return foldl( f, xs..., std::forward<decltype(args)>( args )... );
+        };
+    }
+
+    template< typename F, typename G, typename K >
+    void map( F&& f, G&& g, K&& k ){
+        g( [&]( auto x ){
+            k( f( x ) );
+        } );
+    }
+
+    template< typename F, typename G >
+    auto map( F&& f, G&& g ){
+        return [=]( auto&& k ){
+            g( [&]( auto x ){
+                k( f( x ) );
+            } );
+        };
+    }
+
+    template< typename F, typename... Args >
+    auto curry( F&& f, Args&&... xs ){
+        return [=]( auto&&... args ){
+            return f( xs..., std::forward< decltype( args ) >( args )... );
+        };
+    }
+
     template< typename K >
     class Range{
         K&& k_;
@@ -196,7 +267,7 @@ namespace functional{
 
     struct range_cps{
         template< typename T, typename K>
-        auto operator()( T begin, T end, K&& k ) const{
+        void operator()( T begin, T end, K&& k ) const{
             if( begin < end ){
                 for( auto i = begin ; i < end ; ++i ){
                     k( i );
@@ -206,10 +277,9 @@ namespace functional{
                     k( i );
                 }
             }
-            return aggregator<K>::gather( k );
         }
         template< typename T, typename D, typename K >
-        auto operator()( T begin, T end, D step, K&& k ) const{
+        void operator()( T begin, T end, D step, K&& k ) const{
             if( begin < end ){
                 for( auto i = begin ; i < end ; i += step ){
                     k( i );
@@ -219,12 +289,34 @@ namespace functional{
                     k( i );
                 }
             }
-            return k();
+        }
+        template< typename T, typename... Args >
+        auto operator()( T&& x, Args&&... xs ) const{
+            return curry( range_cps(), std::forward<T>( x ), std::forward<Args>( xs )... );
+        }
+    };
+    
+    struct irange_cps{
+        template< typename T, typename K >
+        void operator()( T begin, T end, K&& k ) const{
+            for( auto i = begin ; i != end ; ++i ){
+                k( *i );
+            }
+        }
+        template< typename R, typename K >
+        void operator()( R&& r, K&& k ) const{
+            (*this)( std::begin( r ), std::end( r ), std::forward<K>( k ) );
+        }
+        template< typename T, typename... Args >
+        auto operator()( T&& x, Args&&... xs ) const{
+            return curry( irange_cps(), std::forward<T>( x ), std::forward<Args>( xs )... );
         }
     };
 
-    const static range_cps range_c;
+    const static range_cps range;
+    const static irange_cps irange;
 
+/*
     template< typename K >
     class IterRange{
         K&& k_;
@@ -251,7 +343,75 @@ namespace functional{
     inline auto irange( K&& k ){
         return IterRange<K>( std::forward<K>( k ) );
     }
+*/
 
+    template< typename T, typename G, typename K >
+    void window( std::size_t n, G&& g, K&& k ){
+        std::deque<T> win;
+        g( [&]( const T& x ){
+            win.push_back( x );
+            while( win.size() > n ){
+                win.pop_front();
+            }
+            if( win.size() == n ){
+                k( irange( win ) );
+            }
+        } );
+    }
+
+    template< typename T, typename G >
+    auto window( std::size_t n, G&& g ){
+        return [=]( auto&& k ){
+            window<T>( n, g, std::forward<decltype(k)>( k ) );
+        };
+    }
+
+    template< typename T >
+    auto window( std::size_t n ){
+        return [=]( auto&& g, auto&& k ){
+            window<T>( n,
+                std::forward<decltype(g)>( g ), std::forward<decltype(k)>( k ) );
+        };
+    }
+
+/*
+    struct window_f{
+        
+        template< typename T, typename G, typename K >
+        void operator()( std::size_t n, G&& g, K&& k ) const{
+            std::deque<T> win;
+            g( [&]( const T& x ){
+                win.push_back( x );
+                while( win.size() > n ){
+                    win.pop_front();
+                }
+                if( win.size() == n ){
+                    k( irange( win ) );
+                }
+            } );
+        }
+
+        template< typename T, typename G >
+        auto operator()( std::size_t n, G&& g ) const{
+            return [=]( auto&& k ){
+                window_f().operator()<T,G,decltype(k)>( n, g, std::forward<decltype(k)>( k ) );
+            };
+        }
+
+        template< typename T >
+        auto operator()( std::size_t n ) const{
+            return [=]( auto&& g, auto&& k ){
+                window_f().operator()<T,decltype(g),decltype(k)>( n,
+                    std::forward<decltype(g)>( g ), std::forward<decltype(k)>( k ) );
+            };
+        }
+
+    };
+
+    static const window_f window;
+*/
+
+/*
     template< typename T >
     auto window( std::size_t n ){
 
@@ -269,6 +429,7 @@ namespace functional{
         };
 
     }
+    */
 
 } //namespace functional
 
