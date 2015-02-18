@@ -1,5 +1,6 @@
 #include "bepler/genomics/feature_model.h"
 
+#include <ios>
 #include <sstream>
 #include <stdexcept>
 #include <vector>
@@ -10,12 +11,6 @@ namespace genomics{
    
     
 
-    size_t hash<Feature>::operator()( const Feature& f ) const{
-        size_t hash = 5;
-        hash = hash*31 + pos;
-        hash = hash*31 + hash<string>()( seq );
-        return hash;
-    }
 
     ostream& operator<<( ostream& out, const Feature& f ){
         return out << "[" << f.pos << "]" << f.seq;
@@ -28,6 +23,10 @@ namespace genomics{
     istream& operator>>( istream& in, Feature& f ){
         string s;
         in >> s;
+        if( s.empty() ){
+            in.setstate( ios::failbit );
+            return in;
+        }
         size_t pos_begin = s.find( '[' );
         if( pos_begin == string::npos ){
             throw featureParseExcept( s );
@@ -39,6 +38,7 @@ namespace genomics{
         }
         f.pos = stoul( s.substr( pos_begin, pos_end - pos_begin ) );
         f.seq = s.substr( pos_end + 1 );
+        return in;
     }
 
     FeatureModel& FeatureModel::clear(){
@@ -48,11 +48,19 @@ namespace genomics{
         return *this;
     }
 
-    inline double FeatureModel::get( const Feature& f ) const{
+    double FeatureModel::get( const Feature& f ) const{
         if( scores_.count( f ) ){
             return scores_.at( f );
         }
         return 0;
+    }
+
+    void FeatureModel::put( const Feature& f, double score ){
+        scores_[ f ] = score;
+        sizes_.insert( f.size() );
+        if( f.pos + f.size() > size_ ){
+            size_ = f.pos + f.size();
+        }
     }
 
     double FeatureModel::score( const char* str ) const{
@@ -68,7 +76,7 @@ namespace genomics{
         return s;
     }
 
-    void FeatureModel::scoreAll( const char* begin, const char* end, functional::acceptor_f<double>& out ) const{
+    void FeatureModel::scoreAll( const char* begin, const char* end, functional::acceptor_f<double>&& out ) const{
         for( const char* pos = begin ; pos < end - size_ + 1 ; ++pos ){
             out( score( pos ) );
         }
@@ -82,21 +90,32 @@ namespace genomics{
     }
 
     istream& operator>>( istream& in, FeatureModel& model ){
-        vector<Feature> features;
-        vector<double> scores;
         Feature f;
         double s;
-        while( !in.eof() ){
-            in >> f;
-            in >> s;
-            features.push_back( f );
-            scores.push_back( s );
+        model.clear();
+        while( in >> f && in >> s ){
+            model.put( f, s );
         }
-        model.assign( features.begin(), features.end(), scores.begin(), scores.end() );
         return in;
     }
 
+    bool operator==( const FeatureModel& a , const FeatureModel& b ){
+        return a.scores_ == b.scores_;
+    }
+
+    bool operator!=( const FeatureModel& a, const FeatureModel& b ){
+        return a.scores_ != b.scores_;
+    }
 
     
 
 } //namespace genomics
+
+namespace std{
+    size_t hash<genomics::Feature>::operator()( const genomics::Feature& f ) const{
+        size_t h = 5;
+        h = h*31 + f.pos;
+        h = h*31 + hash<string>()( f.seq );
+        return h;
+    }
+} //namespace std

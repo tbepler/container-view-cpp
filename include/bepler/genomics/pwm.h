@@ -57,6 +57,8 @@ namespace genomics{
                 }
             }
 
+            virtual void scoreAll( const char* begin, const char* end, functional::acceptor_f<double>&& out ) const override;
+
             template< typename Input >
             inline double operator()( Input in ) const{ return score( in ); }
 

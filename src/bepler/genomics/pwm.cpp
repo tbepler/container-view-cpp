@@ -42,6 +42,12 @@ namespace genomics{
     }
 */
 
+    void PositionWeightMatrix::scoreAll( const char* begin, const char* end, functional::acceptor_f<double>&& out ) const{
+        for( const char* pos = begin ; pos < end - size_ + 1 ; ++pos ){
+            out( score( pos ) );
+        }
+    }
+
     double PositionWeightMatrix::probability( char base, size_t pos ) const{
         return exp( loglikelihood( base, pos ) );
     }
