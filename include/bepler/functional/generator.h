@@ -11,6 +11,7 @@ namespace functional{
     template< typename T >
     using generator_f = std::function< void( acceptor_f<T> ) >;
 
+
 } //namespace functional
 
 #endif
