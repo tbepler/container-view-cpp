@@ -11,7 +11,7 @@ using namespace std;
 
 namespace genomics{
 
-    PositionWeightMatrix::PositionWeightMatrix( const PositionWeightMatrix& rhs ) : Motif( rhs ){
+    PositionWeightMatrix::PositionWeightMatrix( const PositionWeightMatrix& rhs ) : size_( rhs.size_ ){
         
         size_t elems = rhs.size_ * rhs.offset_.size() ;
         double* scores_copy = new double[ elems ];
@@ -42,10 +42,31 @@ namespace genomics{
     }
 */
 
-    void PositionWeightMatrix::scoreAll( const char* begin, const char* end, functional::acceptor_f<double>&& out ) const{
+    void PositionWeightMatrix::scoreAll( const char* begin, const char* end, acceptor&& out ) const{
         for( const char* pos = begin ; pos < end - size_ + 1 ; ++pos ){
             out( score( pos ) );
         }
+    }
+
+    std::size_t PositionWeightMatrix::length( ) const{
+        return size_;
+    }
+
+    bool PositionWeightMatrix::equals( const Motif& m ) const{
+        if( const PositionWeightMatrix* rhs
+            = dynamic_cast< const PositionWeightMatrix* >( &m ) ){
+            if( length() == rhs->length() && alphabet() == rhs->alphabet() ){
+                for( std::size_t i = 0 ; i < length() ; ++i ){
+                    for( char c : alphabet() ){
+                        if( loglikelihood( c, i ) != rhs->likelihood( c, i ) ){
+                            return false;
+                        }
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
     }
 
     double PositionWeightMatrix::probability( char base, size_t pos ) const{
@@ -113,26 +134,25 @@ namespace genomics{
 
     }
 
-    ostream& operator<< ( ostream& out, const PositionWeightMatrix& pwm ){
+    void PositionWeightMatrix::write ( ostream& out ) const{
         //write PWM out in column form
-        string alph = pwm.alphabet();
+        string alph = alphabet();
         //first write alphabet
         for( size_t i = 0 ; i < alph.size() ; ++i ){
             if( i != 0 ) out << " ";
             out << alph[i];
         }
         //now write positions in alphabet order
-        for( size_t i = 0 ; i < pwm.size() ; ++i ){
+        for( size_t i = 0 ; i < length() ; ++i ){
             out << endl;
             for( size_t j = 0 ; j < alph.size() ; ++j ){
                 if( j != 0 ) out << " ";
-                out << pwm.probability( alph[j], i );
+                out << probability( alph[j], i );
             }
         }
-        return out;
     }
 
-    istream& operator>> ( istream& in, PositionWeightMatrix& pwm ){
+    void PositionWeightMatrix::read ( istream& in ){
         //read PWM from column form probabilities
         string line;
         //read to first non empty line
@@ -160,11 +180,10 @@ namespace genomics{
                 }
                 probs.push_back( row );
             }
-            pwm.probabilities( alph, probs );
+            this->probabilities( alph, probs );
         }else{
-            pwm.clear();
+            this->clear();
         }
-        return in;
 
     }
 
