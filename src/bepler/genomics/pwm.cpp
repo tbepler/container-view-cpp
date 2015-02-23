@@ -58,7 +58,7 @@ namespace genomics{
             if( length() == rhs->length() && alphabet() == rhs->alphabet() ){
                 for( std::size_t i = 0 ; i < length() ; ++i ){
                     for( char c : alphabet() ){
-                        if( loglikelihood( c, i ) != rhs->likelihood( c, i ) ){
+                        if( loglikelihood( c, i ) != rhs->loglikelihood( c, i ) ){
                             return false;
                         }
                     }

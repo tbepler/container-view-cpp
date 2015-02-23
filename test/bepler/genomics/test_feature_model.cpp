@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "bepler/genomics/feature_model.h"
 
+#include "bepler/benchmark.h"
 #include <string>
 #include <vector>
 #include <sstream>
@@ -72,17 +73,17 @@ static const vector<double> scores =
 TEST( FeatureModelTest, Initialization ){
 
     FeatureModel empty;
-    EXPECT_EQ( 0, empty.size() );
+    EXPECT_EQ( 0, empty.length() );
 
     FeatureModel constructed( features.begin(), features.end(), scores.begin(), scores.end() );
-    EXPECT_EQ( 3, constructed.size() );
+    EXPECT_EQ( 3, constructed.length() );
     EXPECT_NE( empty, constructed );
 
     FeatureModel from_stream;
     stringstream ss( model_string );
     ss >> from_stream;
 
-    EXPECT_EQ( 3, from_stream.size() );
+    EXPECT_EQ( 3, from_stream.length() );
     EXPECT_EQ( constructed, from_stream );
     EXPECT_NE( empty, from_stream );
 
@@ -108,13 +109,19 @@ TEST( FeatureModelTest, Initialization ){
 
 }
 
+
 TEST( FeatureModelTest, Score ){
 
     FeatureModel model( features.begin(), features.end(), scores.begin(), scores.end() );
-    
+   
     EXPECT_EQ( expected[0], model.score( test ) );
     for( unsigned i = 0 ; i < expected.size() ; ++i ){
-        EXPECT_EQ( expected[i], model.score( test.substr( i ) ) );   
+        EXPECT_EQ( expected[i], model.score( test.substr( i ) ) );
+        EXPECT_EQ( expected[i], model( test.substr( i ) ) );
+        EXPECT_EQ( expected[i], model.score(
+            functional::irange( test.substr( i ) ) ) );
+        EXPECT_EQ( expected[i], model(
+            functional::irange( test.substr( i ) ) ) );
     }
 
     vector<double> scores;
@@ -122,8 +129,113 @@ TEST( FeatureModelTest, Score ){
         scores.push_back( s );
     } );
     EXPECT_EQ( expected, scores );
+
+    scores.clear();
+    model( test, [&]( auto s ){
+        scores.push_back( s );
+    } );
+    EXPECT_EQ( expected, scores );
+    
+    scores.clear();
+    model.scoreAll( functional::irange( test ), [&]( auto s ){
+        scores.push_back( s );
+    } );
+    EXPECT_EQ( expected, scores );
+
+    scores.clear();
+    model( functional::irange( test ), [&]( auto s ){
+        scores.push_back( s );
+    } );
+    EXPECT_EQ( expected, scores );
     
 
 }
+
+struct ScoreString{
+
+    double sum = 0;
+    const FeatureModel& model;
+    ScoreString( const FeatureModel& m ) : model( m ) { }
+    double operator()(){
+        for( double i = 0 ; i < expected.size() ; ++i ){
+            sum += model( test.substr( i ) );
+        }
+        return sum;
+    }
+
+};
+
+struct ScoreGenerator{
+
+    double sum = 0;
+    const FeatureModel& model;
+    ScoreGenerator( const FeatureModel& m ) : model( m ) { }
+    double operator()(){
+        for( double i = 0 ; i < expected.size() ; ++i ){
+            sum += model( functional::irange( test.substr( i ) ) );
+        }
+        return sum;
+    }
+
+};
+
+struct ScoreAllString{
+
+    double sum = 0;
+    const FeatureModel& model;
+    ScoreAllString( const FeatureModel& m ) : model( m ) { }
+    double operator()(){
+        //model( test, [this]( auto s ){
+        //    this->sum += s;
+        //} );
+        sum += functional::foldl( std::plus<double>(), 0.0, 
+            std::bind( model, test ) );
+        return sum;
+    }
+
+};
+
+struct ScoreAllGenerator{
+
+    double sum = 0;
+    const FeatureModel& model;
+    ScoreAllGenerator( const FeatureModel& m ) : model( m ) { }
+    double operator()(){
+        //model( functional::irange( test ), [this]( auto s ){
+        //    this->sum += s;
+        //} );
+        sum += functional::foldl( std::plus<double>(), 0.0, 
+            std::bind( model, functional::irange( test ) ) );
+        return sum;
+    }
+
+};
+
+TEST( FeatureModelTest, Benchmark ){
+
+    FeatureModel model( features.begin(), features.end(), scores.begin(), scores.end() );
+
+    double time = benchmark::timeIters( 10000, ScoreString( model ) );
+    std::cout << "Score string:" << std::endl;
+    std::cout << "Cycles per iter: " << time << std::endl;
+    std::cout << "Cycles per score: " << time / expected.size() << std::endl;
+    
+    time = benchmark::timeIters( 10000, ScoreGenerator( model ) );
+    std::cout << "Score generator:" << std::endl;
+    std::cout << "Cycles per iter: " << time << std::endl;
+    std::cout << "Cycles per score: " << time / expected.size() << std::endl;
+
+    time = benchmark::timeIters( 10000, ScoreAllString( model ) );
+    std::cout << "Score all string:" << std::endl;
+    std::cout << "Cycles per iter: " << time << std::endl;
+    std::cout << "Cycles per score: " << time / expected.size() << std::endl;
+    
+    time = benchmark::timeIters( 10000, ScoreAllGenerator( model ) );
+    std::cout << "Score all generator:" << std::endl;
+    std::cout << "Cycles per iter: " << time << std::endl;
+    std::cout << "Cycles per score: " << time / expected.size() << std::endl;
+
+}
+
 
 

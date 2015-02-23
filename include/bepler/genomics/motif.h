@@ -1,4 +1,4 @@
-uifndef INCLUDED_BEPLER_GENOMICS_MOTIF_H
+#ifndef INCLUDED_BEPLER_GENOMICS_MOTIF_H
 #define INCLUDED_BEPLER_GENOMICS_MOTIF_H
 
 #include "bepler/functional/generator.h"
@@ -19,23 +19,36 @@ namespace genomics{
         inline double score( const std::string& str ) const{
             return score( str.c_str() );
         }
+        inline double score( std::string&& str ) const{
+            return score( str.c_str() );
+        }
         inline double operator()( const char* str ) const{
             return score( str );
         }
         inline double operator()( const std::string& str ) const{
             return score( str );
         }
+        inline double operator()( std::string&& str ) const{
+            return score( std::forward<std::string>( str ) );
+        }
 
         virtual void scoreAll( const char* begin, const char* end, acceptor&& out ) const = 0;
         inline void scoreAll( const std::string& str, acceptor&& out ) const{
-                scoreAll( str.c_str(), str.c_str() + str.size(),
-                    std::forward< acceptor >( out ) );
+            scoreAll( str.c_str(), str.c_str() + str.size(),
+                std::forward< acceptor >( out ) );
+        }
+        inline void scoreAll( std::string&& str, acceptor&& out ) const{
+            scoreAll( str.c_str(), str.c_str() + str.size(),
+                std::forward< acceptor >( out ) );
         }
         inline void operator()( const char* begin, const char* end, acceptor&& out ){
-            scoreAll( begin, end, out );
+            scoreAll( begin, end, std::forward<acceptor>( out ) );
         }
         inline void operator()( const std::string& str, acceptor&& out ) const{
-            scoreAll( str, out );
+            scoreAll( str, std::forward<acceptor>( out ) );
+        }
+        inline void operator()( std::string&& str, acceptor&& out ) const{
+            scoreAll( std::forward<std::string>( str ), std::forward<acceptor>( out ) );
         }
 
         virtual std::size_t length( ) const = 0;       
@@ -66,39 +79,51 @@ namespace genomics{
     template< typename Derived >
     struct MotifConcept : public Motif{
 
+        template< typename G, typename T >
+        using enable = typename std::enable_if<
+            !std::is_same< typename std::decay<G>::type, std::string >::value
+            && !std::is_same< typename std::decay<G>::type, char* >::value,
+            T
+        >::type;
+
         using Motif::score;
         using Motif::scoreAll;
         using Motif::operator();
 
         template< typename G >
-        inline auto score( G&& g ) const{
-            return derived().score( std::forward<G>( g ) );
+        inline enable<G,double> score( G&& g ) const{
+            return derived().scoreGenerator( std::forward<G>( g ) );
         }
-        virtual double score( const char* str ) const{
-            return score( functional::irange( str, str + length() ) );
+        virtual double score( const char* str ) const override{
+            using namespace functional;
+            return score( curry( irange, str, str + length() ) );
         }
 
         template< typename G >
-        inline auto operator( G&& g ) const{
+        inline auto operator()( G&& g ) const{
             return score( std::forward<G>( g ) );
         }
 
         template< typename G, typename K >
-        inline auto scoreAll( G&& g, K&& k ) const{
-            return derived().scoreAll( std::forward<G>( g ), std::forward<K>( k ) );
+        inline enable<G,void> scoreAll( G&& g, K&& k ) const{
+            derived().scoreAllGenerator( std::forward<G>( g ), std::forward<K>( k ) );
         }
-        virtual void scoreAll( const char* begin, const char* end, acceptor&& k ){
-            return scoreAll( functional::irange( begin, end ), std::forward< acceptor >( k ) );
+        virtual void scoreAll( const char* begin, const char* end, acceptor&& k ) const override{
+            using namespace functional;
+            scoreAll(
+                curry( irange, begin, end ),
+                std::forward< acceptor >( k )
+            );
         }
 
         template< typename G, typename K >
-        inline auto operator( G&& g, K&& k ) const{
+        inline auto operator()( G&& g, K&& k ) const{
             return scoreAll( std::forward<G>( g ), std::forward<K>( k ) );
         }
 
         protected:
             inline Derived& derived(){ return static_cast<Derived>(*this); }
-            inline const Derived& derived() const{ return static_cast<const Derived>(*this); }
+            inline const Derived& derived() const{ return *static_cast<const Derived*>(this); }
 
     }; //struct MotifConcept
 

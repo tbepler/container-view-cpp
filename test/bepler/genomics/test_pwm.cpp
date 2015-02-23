@@ -30,7 +30,7 @@ TEST( PositionWeightMatrixTest, Initialize ){
         }
     }
     pwm.clear();
-    EXPECT_EQ( 0, pwm.size() );
+    EXPECT_EQ( 0, pwm.length() );
     std::stringstream ss( text );
     ss >> pwm;
     EXPECT_EQ( alph, pwm.alphabet() );
@@ -48,9 +48,10 @@ TEST( PositionWeightMatrixTest, Score ){
     double exp_score = log( 0.001 ) + log( 0.25 ) + log( 0.7 ) + log( 0.33 ) + log( 0.01 );
     
     genomics::PWM pwm( alph, probs );
-    EXPECT_EQ( exp_score, pwm.score( str.begin() ) );
+    EXPECT_EQ( exp_score, pwm.score( str.c_str() ) );
+    EXPECT_EQ( exp_score, pwm.score( str ) );
 
-    unsigned idxs[] = { 0, 1, 1, 0, 2, 0, 3, 3, 0, 1, 3, 3, 3, 3, 1, 3 };
+    //unsigned idxs[] = { 0, 1, 1, 0, 2, 0, 3, 3, 0, 1, 3, 3, 3, 3, 1, 3 };
     str = "ACCAGATTACTTTTCT";
     std::vector<double> exp_scores = {
         log( probs[0][0] ) + log( probs[1][1] ) + log( probs[2][1] ) + log( probs[3][0] ) + log( probs[4][2] ),
@@ -68,8 +69,17 @@ TEST( PositionWeightMatrixTest, Score ){
     };
 
     std::vector<double> scores;
-    pwm( std::begin( str ), std::end( str ), std::back_insert_iterator<std::vector<double> >( scores ) );
+    pwm( functional::irange( str ), [&]( auto s ){
+        scores.push_back( s );
+    } );
+    EXPECT_EQ( exp_scores, scores );
 
+    scores.clear();
+    EXPECT_NE( exp_scores, scores );
+
+    pwm( str, [&]( auto s ){
+        scores.push_back( s );
+    } );
     EXPECT_EQ( exp_scores, scores );
 
 

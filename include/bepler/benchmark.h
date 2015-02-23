@@ -1,13 +1,11 @@
 #ifndef INCLUDED_BEPLER_BENCHMARK_H
 #define INCLUDED_BEPLER_BENCHMARK_H
 
+#include <cstdlib>
+
 namespace benchmark{
 
-    std::size_t rdtsc(){
-        unsigned int lo, hi;
-        __asm__ __volatile__( "rdtsc" : "=a" ( lo ), "=d" ( hi ) );
-        return ( ( std::size_t ) hi << 32 ) | lo ;
-    }
+    std::size_t rdtsc();
 
     template< typename Function, typename ... T >
     std::size_t time( Function f, T... args ){

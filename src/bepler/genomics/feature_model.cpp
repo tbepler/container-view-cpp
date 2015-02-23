@@ -4,13 +4,20 @@
 #include <sstream>
 #include <stdexcept>
 #include <vector>
+#include <algorithm>
+#include <iterator>
 
 using namespace std;
 
 namespace genomics{
    
     
-
+    inline ostream& operator<<( ostream& out, const deque<char>& seq ){
+        for( char c : seq ){
+            out << c;
+        }
+        return out;
+    }
 
     ostream& operator<<( ostream& out, const Feature& f ){
         return out << "[" << f.pos << "]" << f.seq;
@@ -37,12 +44,13 @@ namespace genomics{
             throw featureParseExcept( s );
         }
         f.pos = stoul( s.substr( pos_begin, pos_end - pos_begin ) );
-        f.seq = s.substr( pos_end + 1 );
+        string sub = s.substr( pos_end + 1 );
+        f.seq.assign( sub.begin(), sub.end() );
         return in;
     }
 
     FeatureModel& FeatureModel::clear(){
-        size_ = 0;
+        len_ = 0;
         scores_.clear();
         sizes_.clear();
         return *this;
@@ -58,8 +66,8 @@ namespace genomics{
     void FeatureModel::put( const Feature& f, double score ){
         scores_[ f ] = score;
         sizes_.insert( f.size() );
-        if( f.pos + f.size() > size_ ){
-            size_ = f.pos + f.size();
+        if( f.pos + f.size() > len_ ){
+            len_ = f.pos + f.size();
         }
     }
 
@@ -67,55 +75,55 @@ namespace genomics{
         double s = 0;
         Feature f;
         for( size_t f_len : sizes_ ){
-            for( size_t pos = 0 ; pos < size_ - f_len + 1 ; ++pos ){
-                f.pos = pos;
-                f.seq.assign( str + pos, f_len );
-                s += get( f );
+            f.pos = 0;
+            f.seq.clear();
+            for( size_t i = 0 ; i < len_ ; ++i ){
+                f.seq.push_back( str[i] );
+                while( f.seq.size() > f_len ){
+                    f.seq.pop_front();
+                    ++f.pos;
+                }
+                if( f.seq.size() == f_len ){
+                    s += get( f );
+                }
             }
         }
         return s;
     }
 
-    void FeatureModel::scoreAll( const char* begin, const char* end, functional::acceptor_f<double>&& out ) const{
-        for( const char* pos = begin ; pos < end - size_ + 1 ; ++pos ){
+    void FeatureModel::scoreAll( const char* begin, const char* end, acceptor&& out ) const{
+        for( const char* pos = begin ; pos < end - len_ + 1 ; ++pos ){
             out( score( pos ) );
         }
     }
 
-    ostream& operator<<( ostream& out, const FeatureModel& model ){
-        for( auto it = model.scores_.begin() ; it != model.scores_.end() ; ++it ){
+    bool FeatureModel::equals( const Motif& m ) const{
+        if( const FeatureModel* rhs = dynamic_cast< const FeatureModel* >( &m ) ){
+            return scores_ == rhs->scores_;
+        }
+        return false;
+    }
+
+    void FeatureModel::write( ostream& out ) const{
+        for( auto it = scores_.begin() ; it != scores_.end() ; ++it ){
             out << it->first << " " << it->second << endl;
         }
-        return out;
     }
 
-    istream& operator>>( istream& in, FeatureModel& model ){
+    void FeatureModel::read( istream& in ){
         Feature f;
         double s;
-        model.clear();
+        clear();
         while( in >> f && in >> s ){
-            model.put( f, s );
+            put( f, s );
         }
-        return in;
     }
-
-    bool operator==( const FeatureModel& a , const FeatureModel& b ){
-        return a.scores_ == b.scores_;
-    }
-
-    bool operator!=( const FeatureModel& a, const FeatureModel& b ){
-        return a.scores_ != b.scores_;
-    }
-
     
 
 } //namespace genomics
 
 namespace std{
     size_t hash<genomics::Feature>::operator()( const genomics::Feature& f ) const{
-        size_t h = 5;
-        h = h*31 + f.pos;
-        h = h*31 + hash<string>()( f.seq );
-        return h;
+        return 151*f.pos + hash< containers::HashedDeque<char> >()( f.seq );
     }
 } //namespace std

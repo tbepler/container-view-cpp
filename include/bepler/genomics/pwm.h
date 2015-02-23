@@ -14,10 +14,11 @@ namespace genomics{
     class PositionWeightMatrix : public MotifConcept< PositionWeightMatrix >{
 
         typedef std::unordered_map<char,std::size_t> Map;
+        using super_t = MotifConcept< PositionWeightMatrix >;
 
         public:
-            using Motif::score;
-            using Motif::scoreAll;
+            using super_t::score;
+            using super_t::scoreAll;
 
             PositionWeightMatrix() : offset_(), scores_( NULL ), size_( 0 ) { }
             PositionWeightMatrix( const PositionWeightMatrix& rhs );
@@ -29,17 +30,17 @@ namespace genomics{
             double loglikelihood( char base, std::size_t pos ) const;
 
             template< typename G >
-            inline double score( G&& g ) const{
+            inline double scoreGenerator( G&& g ) const{
                 double s = 0;
                 std::size_t i = 0;
                 g( [&]( auto c ){
-                    s += loglikelihood( c, i++ );
+                    s += this->loglikelihood( c, i++ );
                 } );
                 return s;
             }
 
             template< typename G, typename K >
-            inline void scoreAll( G&& g, K&& k ) const{
+            inline void scoreAllGenerator( G&& g, K&& k ) const{
                 using namespace functional;
                 map( *this ,
                     window<char>( length(), std::forward<G>( g ) ),

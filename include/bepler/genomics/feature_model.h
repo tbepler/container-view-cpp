@@ -2,20 +2,21 @@
 #define INCLUDED_BEPLER_GENOMICS_FEATURE_MODEL_H
 
 #include "bepler/genomics/motif.h"
+#include "bepler/containers/hashed_deque.h"
 #include <string>
-#include <deque>
 #include <unordered_map>
 #include <set>
+#include <vector>
 #include <functional>
 #include <iostream>
 
 namespace genomics{
 
     struct Feature{
-        std::deque<char> seq;
+        containers::HashedDeque<char> seq;
         std::size_t pos;
 
-        Feature() { }
+        Feature() : seq(), pos( 0 ) { }
         Feature( const std::string& s, std::size_t p )
             : seq( s.begin(), s.end() ), pos( p ) { }
 
@@ -65,6 +66,7 @@ namespace genomics{
     class FeatureModel : public MotifConcept< FeatureModel >{
         
         using FeatureMap = std::unordered_map< Feature, double >;
+        using super_t = MotifConcept< FeatureModel >;
 
         const static std::size_t sindex = 0;
 
@@ -99,11 +101,11 @@ namespace genomics{
                 return *this;
             }
 
-            using Motif::score;
-            using Motif::scoreAll;
+            using super_t::score;
+            using super_t::scoreAll;
 
             template< typename G >
-            double score( G&& g ) const{
+            double scoreGenerator( G&& g ) const{
                 double s = 0;
                 std::vector<Feature> features( sizes_.size() );
                 g( [&]( char c ){
@@ -115,6 +117,7 @@ namespace genomics{
                         f.seq.push_back( c );
                         while( f.size() > f_size ){
                             f.seq.pop_front();
+                            ++f.pos;
                         }
                         if( f.size() == f_size ){
                             s += this->get( f );
@@ -125,23 +128,22 @@ namespace genomics{
             }
 
             template< typename G, typename K >
-            void scoreAll( G&& g, K&& k ){
+            void scoreAllGenerator( G&& g, K&& k ) const{
                 using namespace functional;
                 auto s = [this]( auto&& gen ){
                     return this->score( std::forward<decltype(gen)>( gen ) );
-                }
+                };
                 map( s, window<char>( length(),
                     std::forward<G>( g ) ), std::forward<K>( k ) );
             }
 
             FeatureModel& clear();
-            virtual double score( const char* str ) const;
-            virtual void scoreAll( const char* begin, const char* end, functional::acceptor_f<double>&& out ) const;
-            friend std::ostream& operator<<( std::ostream& out, const FeatureModel& model );
-            friend std::istream& operator>>( std::istream& in, FeatureModel& model );
-            friend bool operator==( const FeatureModel& a, const FeatureModel& b );
-            friend bool operator!=( const FeatureModel& a, const FeatureModel& b );
+            virtual double score( const char* str ) const override;
+            virtual void scoreAll( const char* begin, const char* end, acceptor&& out ) const override;
 
+            virtual std::size_t length() const override{ return len_; }
+            virtual bool equals( const Motif& rhs ) const override;
+    
     }; //class FeatureModel
 
 } //namespace genomics

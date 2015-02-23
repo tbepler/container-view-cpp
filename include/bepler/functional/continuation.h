@@ -189,6 +189,22 @@ namespace functional{
     };
 
     template< typename F, typename T, typename G >
+    auto foldl( const F& f, T cur, G& g ){
+        g( [&]( auto x ){
+            cur = f( cur, x );
+        } );
+        return cur;
+    }
+
+    template< typename F, typename T, typename G >
+    auto foldl( const F& f, T cur, const G& g ){
+        g( [&]( auto x ){
+            cur = f( cur, x );
+        } );
+        return cur;
+    }
+
+    template< typename F, typename T, typename G >
     auto foldl( F&& f, T cur, G&& g ){
         g( [&]( auto x ){
             cur = f( cur, x );
@@ -226,6 +242,14 @@ namespace functional{
             } );
         };
     }
+/*
+    template< typename F, typename... Args >
+    auto curry( const F& f, Args&&... xs ){
+        return [&]( auto&&... args ){
+            return f( xs..., std::forward< decltype( args ) >( args )... );
+        };
+    }
+*/
 
     template< typename F, typename... Args >
     auto curry( F&& f, Args&&... xs ){
