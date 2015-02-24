@@ -2,6 +2,8 @@
 #include "bepler/functional/bind.h"
 
 #include <functional>
+#include <iostream>
+#include "bepler/benchmark.h"
 
 struct MutableFunctor{
     std::function<int(int,int)> f;
@@ -72,6 +74,44 @@ TEST( FunctionalBindTest, BindMultipleArgs ){
     EXPECT_EQ( 10, add10() );
     EXPECT_EQ( 15, add10( 5 ) );
     EXPECT_EQ( 15, add10( 4, 1 ) );
+
+}
+
+const static double array[] = { 1.2, 3, 0.5, 4, 3, 2, 1, 46, 21, 51, -3.33,
+-5.44, -1313, 8352.1414, -241.14, 14140194.141, -13513, 9 };
+
+struct AddFiveUnbound{
+    double total = 0;
+    double operator()(){
+        for( double d : array ){
+            __asm__ __volatile__("");
+            total += d + 5;
+        }
+        return total;
+    }
+};
+
+struct AddFiveBound{
+    double total = 0;
+    double operator()(){
+        auto add5 = functional::bind( sum(), 1, 1, 1, 1, 1 );
+        for( double d : array ){
+            __asm__ __volatile__("");
+            total += add5( d );
+        }
+        return total;
+    }
+};
+
+TEST( FunctionalBindTest, Benchmark ){
+
+    double time = benchmark::timeIters( 10000, AddFiveUnbound() );
+    std::cout << "add five unbound:" << std::endl;
+    std::cout << "cycles per iter: " << time << std::endl;
+
+    time = benchmark::timeIters( 10000, AddFiveBound() );
+    std::cout << "add five bound:" << std::endl;
+    std::cout << "cycles per iter: " << time << std::endl;
 
 }
 

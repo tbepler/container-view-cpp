@@ -2,6 +2,7 @@
 #define INCLUDED_BEPLER_FUNCTIONAL_GENERATOR_H
 
 #include <functional>
+#include "bepler/functional/bind.h"
 
 namespace functional{
 
@@ -23,6 +24,31 @@ namespace functional{
     inline void enumerate( G&& g, K&& k ){
         enumerate( 0, std::forward<G>( g ), std::forward<K>( k ) );
     }
+
+    struct IRange{
+
+        template< typename Iter, typename K >
+        inline void operator()( Iter begin, Iter end, K&& k ) const{
+            for( auto it = begin ; it != end ; ++it ){
+                k( *it );
+            }
+        }
+
+        template< typename Range, typename K >
+        inline void operator()( Range&& r, K&& k ) const{
+            for( auto&& val : r ){
+                k( std::forward< decltype(val) >( val ) );
+            }
+        }
+
+        template< typename... Params >
+        constexpr auto operator()( Params&&... args ){
+            return bind( IRange(), std::forward<Params>( args )... );
+        }
+
+    };
+
+    static const IRange irange2;
 
 
 
