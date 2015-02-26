@@ -3,6 +3,7 @@
 
 #include "bepler/genomics/motif.h"
 #include "bepler/containers/hashed_deque.h"
+#include "bepler/functional/window.h"
 #include <string>
 #include <unordered_map>
 #include <set>
@@ -133,7 +134,7 @@ namespace genomics{
                 auto s = [this]( auto&& gen ){
                     return this->score( std::forward<decltype(gen)>( gen ) );
                 };
-                map( s, window<char>( length(),
+                map( s, rolling_window<char>( length(),
                     std::forward<G>( g ) ), std::forward<K>( k ) );
             }
 

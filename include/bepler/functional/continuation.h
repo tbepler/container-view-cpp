@@ -229,16 +229,16 @@ namespace functional{
 
     template< typename F, typename G, typename K >
     void map( F&& f, G&& g, K&& k ){
-        g( [&]( auto x ){
-            k( f( x ) );
+        g( [&]( auto&& x ){
+            k( f( std::forward<decltype(x)>( x ) ) );
         } );
     }
 
     template< typename F, typename G >
     auto map( F&& f, G&& g ){
         return [=]( auto&& k ){
-            g( [&]( auto x ){
-                k( f( x ) );
+            g( [&]( auto&& x ){
+                k( f( std::forward<decltype(x)>( x ) ) );
             } );
         };
     }

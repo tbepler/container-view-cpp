@@ -25,6 +25,11 @@ namespace functional{
         enumerate( 0, std::forward<G>( g ), std::forward<K>( k ) );
     }
 
+    template< typename G, typename K >
+    inline void for_each( G&& g, K&& k ){
+        g( std::forward<K>( k ) );
+    }
+
     struct IRange{
 
         template< typename Iter, typename K >
@@ -49,8 +54,6 @@ namespace functional{
     };
 
     static const IRange irange2;
-
-
 
 
 } //namespace functional
