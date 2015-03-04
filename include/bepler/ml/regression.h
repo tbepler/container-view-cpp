@@ -6,10 +6,10 @@
 
 namespace ml{
 
-    template< typename Vector, typename N >
+    template< typename Vector, typename Scalar >
     class LinearModel{
         Vector w_;
-        N bias_;
+        Scalar bias_;
 
         inline bool equals( const LinearModel& o ) const{
             return w_ == o.w_ && bias_ == o.bias_;
@@ -22,7 +22,7 @@ namespace ml{
                 bias_( std::forward<B>( bias ) ) { }
 
             inline const Vector& weights() const{ return w_; }
-            inline const N& bias() const{ return bias_; }
+            inline const Scalar& bias() const{ return bias_; }
 
             template< typename V >
             inline void weights( V&& w ){ w_ = std::forward<V>( w ); }
@@ -43,29 +43,49 @@ namespace ml{
 
     }; //class LinearModel
 
-    template< typename W, typename N >
-    constexpr linear_model( W&& w, N&& bias ){
-        return LinearModel<decltype(vector( w )),N>( std::forward<W>( w ),
-            std::forward<N>( bias ) );
+    /*
+    Ridge:
+
+    argmin[ (Xw+w0-y)'(Xw+w0-y) ]
+    w,w0
+
+    w = (X'X + nI)\X'y
+    */
+
+    template< typename X, typename Mean >
+    inline auto center( X&& x, Mean&& mean = Mean() ){
+        
     }
 
-    template< typename X, typename Y, typename N, typename Solver >
-    auto ridge( X&& x, Y&& y, N&& lambda, bool centered = false,
-        Solver&& solve = Solver() ){
+    template< typename Vector, typename Scalar, typename Subroutines >
+    struct Regression : private Subroutines{
+
         
-        if( !centered ){
-            auto model = ridge( center( x ), center( y ), lambda, true,
-                std::forward<Solver>( solve ) );
-            model.bias( mean( y ) - mean( colwise( x ) ) * model.weights() );
-            return model;
+        auto ridge( ) const{
+
         }
 
-        using matrix = decltype( matrix( x ) );
-        auto&& a = transpose(x)*x + lambda*eye<matrix>( cols( x ) );
-        auto&& w = solve( a, transpose(x)*y );
-        return linear_model( w, 0 );
+    };
 
-    }
+    template< typename Vector, typename N >
+    struct RidgeModel : public LinearModel<Vector,N>{
+        
+        template< typename X, typename Y, typename R, typename Solver >
+        RidgeModel& train( X&& x, Y&& y, R&& regularizer, bool centered = false,
+             Solver&& solve = Solver() ){
+            
+            if( !centered ){
+                this->train( center( x ), center( y ), lambda, true, r );
+                this->bias( mean( y ) - this->predict( mean( x, 0 ) ) );
+                return *this;
+            }
+            auto&& a = trans(x)*x + lambda*eye( x );
+            this->weights( solve( a, trans(x)*y ) );
+
+        }
+
+    };
+
 
 } //namespace ml
 
